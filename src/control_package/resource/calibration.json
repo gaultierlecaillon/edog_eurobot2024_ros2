@@ -1,0 +1,14 @@
+{
+  "calibration": {
+    "linear": {
+      "pos": 50,
+      "mm": 1265,
+      "coef": 0.03952569169
+    },
+    "rotation": {
+      "deg": 360,
+      "mm": 838,
+      "coef": 2.35
+    }
+  }
+}

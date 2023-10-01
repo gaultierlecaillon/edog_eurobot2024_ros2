@@ -1,0 +1,30 @@
+{
+  "type": "Demo",
+  "name": "Homolgation",
+  "description": "Homologation strat",
+  "color": "green",
+  "startingPos": "225,1770,0",
+  "strategy": [
+    {
+      "name": "Starting Blocks",
+      "actions": [
+        { "calibrate": "True" },
+        { "waiting_tirette": "True" },
+        { "waiting_tirette": "False" }
+      ]
+    },
+    {
+      "name": "Opening",
+      "actions": [
+        { "forward": "170" },
+        { "grab": "" },
+        { "forward": "180" },
+        { "grab": "" },
+        { "goto": "1090,1320,-1" },
+        { "grab": "" },
+        { "goto": "1865,1677,90" },
+        { "drop": "" }
+      ]
+    }
+  ]
+}

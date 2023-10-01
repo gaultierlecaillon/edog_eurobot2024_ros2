@@ -1,0 +1,21 @@
+{
+  "type": "Strategy",
+  "name": "MatchGreen",
+  "description": "Main strategy for green color",
+  "color": "green",
+  "startingPos": "0,0,0",
+  "strategy": [
+    {
+      "name": "Robot Initialization",
+      "actions": [
+        { "calibrate": "True" }
+      ]
+    },
+    {
+      "name": "Test",
+      "actions": [
+        { "unstack": "" }
+      ]
+    }
+  ]
+}

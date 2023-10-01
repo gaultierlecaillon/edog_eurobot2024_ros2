@@ -1,0 +1,31 @@
+{
+  "type": "Strategy",
+  "name": "MatchBlue",
+  "description": "Main strategy for blue color",
+  "color": "blue",
+  "startingPos": "250,225,0",
+  "strategy": [
+    {
+      "name": "Starting Blocks",
+      "actions": [
+        { "calibrate": "True" },
+        { "waiting_tirette": "True" },
+        { "waiting_tirette": "False" }
+      ]
+    },
+    {
+      "name": "Opening",
+      "actions": [
+        { "forward": "145" },
+        { "grab": "" },
+        { "forward": "180" },
+        { "grab": "" },
+        { "goto": "1020,600,-1" },
+        { "grab": "" },
+        { "goto": "460,270,-90" },
+        { "unstack": "" },
+        { "goto": "1800,420,-1" }
+      ]
+    }
+  ]
+}

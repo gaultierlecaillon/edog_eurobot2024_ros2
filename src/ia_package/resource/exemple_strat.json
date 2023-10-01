@@ -1,0 +1,42 @@
+{
+  "type": "Strategy",
+  "name": "MatchGreen",
+  "description": "Main strategy for green color",
+  "color": "green",
+  "startingPos": "0,0,0",
+  "strategy": [
+    {
+      "name": "Starting Blocks",
+      "actions": [
+        { "calibrate": "True" },
+        { "waiting_tirette": "True" },
+        { "waiting_tirette": "False" }
+      ]
+    },
+    {
+      "name": "opening",
+      "actions": [
+        { "grab": "0,0" },
+        { "grab": "10,0" },
+        { "grab": "30,20" },
+        { "deposeStack": "10,10" }
+      ]
+    },
+    {
+      "name": "mid_game",
+      "actions": [
+        { "goto": "200,200" },
+        { "search": "brown" },
+        { "search": "yellow" },
+        { "search": "pink" },
+        { "deposeStack": "100,10" }
+      ]
+    },
+    {
+      "name": "late_game",
+      "actions": [
+        { "goto": "0,0" }
+      ]
+    }
+  ]
+}

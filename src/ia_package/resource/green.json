@@ -1,0 +1,31 @@
+{
+  "type": "Strategy",
+  "name": "MatchGreen",
+  "description": "Main strategy for green color",
+  "color": "green",
+  "startingPos": "250,1775,0",
+  "strategy": [
+    {
+      "name": "Starting Blocks",
+      "actions": [
+        { "calibrate": "True" },
+        { "waiting_tirette": "True" },
+        { "waiting_tirette": "False" }
+      ]
+    },
+    {
+      "name": "Opening",
+      "actions": [
+        { "forward": "145" },
+        { "grab": "" },
+        { "forward": "180" },
+        { "grab": "" },
+        { "goto": "1020,1400,-1" },
+        { "grab": "" },
+        { "goto": "290,1540,180" },
+        { "unstack": "" },
+        { "goto": "1800,1540,-1" }
+      ]
+    }
+  ]
+}
