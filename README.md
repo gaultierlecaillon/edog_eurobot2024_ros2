@@ -2,13 +2,13 @@
 <br />
 <div align="center">
   <a href="https://github.com/othneildrew/Best-README-Template">
-    <img src="https://i.postimg.cc/BZcpdHgc/table-2023-Feb-25-11-50-22-AM-000-Customized-View5422542567.png" alt="Logo">
+    <img src="https://i.postimg.cc/BZcpdHgc/table-2024-Feb-25-11-50-22-AM-000-Customized-View5422542567.png" alt="Logo">
   </a>
 
-  <h3 align="center">Edog Eurobot 2023 ROS2 packages </h3>
+  <h3 align="center">Edog Eurobot 2024 ROS2 packages </h3>
 
   <p align="center">
-    A collection of ROS2 packages to control the robot Edog 2023
+    A collection of ROS2 packages to control the robot Edog 2024
     </p>
 </div>
 
