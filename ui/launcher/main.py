@@ -1,8 +1,8 @@
-#!/usr/bin/env python3
 import tkinter as tk
 from tkinter import messagebox, ttk
 from ttkthemes import ThemedTk
 import subprocess
+import glob
 
 
 def execute_command(command):
@@ -18,6 +18,9 @@ def view1():
 
 def view2():
     frame_lidar.tkraise()
+
+def view3():
+    frame_launchpad.tkraise()
 
 
 app = ThemedTk(theme="equilux")
@@ -37,22 +40,46 @@ btn_home = ttk.Button(nav_bar, text="Home", command=view1,
                        style="Large.TButton")
 btn_home.pack(side='left', padx=10, ipady=10)  # Use ipady to increase button height
 
+btn_launchpad = ttk.Button(nav_bar, text="LaunchPad", command=view3,
+                           style="Large.TButton")
+btn_launchpad.pack(side='left', padx=10, ipady=10)
+
 btn_lidar = ttk.Button(nav_bar, text="Lidar", command=view2,
                        style="Large.TButton")
 btn_lidar.pack(side='left', padx=10, ipady=10)
 
+
+
+''' View Home '''
 frame_home = ttk.Frame(app)
 frame_home.place(relwidth=1, relheight=1, y=80)
 
-cmd_home_calibrate = ttk.Button(frame_home, text="Command 1",
+cmd_home_launch = ttk.Button(frame_home, text="Launch",
                           command=lambda: execute_command("echo Hello View 1"),
                           style="Large.TButton")
-cmd_home_calibrate.pack(pady=10, ipady=20)  # Increase ipady value to make the button taller
+cmd_home_launch.pack(pady=10, ipady=20)  # Increase ipady value to make the button taller
+''' End View Home '''
 
+''' View LaunchPad '''
+frame_launchpad = ttk.Frame(app)
+frame_launchpad.place(relwidth=1, relheight=1, y=80)
+
+# Loop through all .json files and create a button for each
+for json_file in glob.glob("json/*.json"):
+    def create_command(filepath):
+        return lambda: execute_command(f"echo {filepath}")  # Replace echo command as per your need
+
+
+    btn = ttk.Button(frame_launchpad, text=json_file.split("/")[-1],
+                     command=create_command(json_file),
+                     style="Large.TButton")
+    btn.pack(pady=5, ipady=10)  # Adjust padding as per need
+''' End View LaunchPad '''
+
+''' View Lidar '''
 frame_lidar = ttk.Frame(app)
 frame_lidar.place(relwidth=1, relheight=1, y=80)
 
-''' View Lidar '''
 cmd_lidar_start = ttk.Button(frame_lidar, text="Start",
                           command=lambda: execute_command("Start"),
                           style="Large.TButton")
