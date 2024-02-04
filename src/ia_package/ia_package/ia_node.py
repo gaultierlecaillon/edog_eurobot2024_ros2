@@ -129,6 +129,7 @@ class IANode(Node):
             self.get_logger().warn(f"Waiting for Server {service_name} to be available...")
 
         request = CmdActuatorService.Request()
+        request.param = param
         future = client.call_async(request)
 
         future.add_done_callback(
@@ -145,7 +146,10 @@ class IANode(Node):
 
         request = CmdActuatorService.Request()
         request.param = str(param)
-        client.call_async(request)
+        future = client.call_async(request)
+
+        future.add_done_callback(
+            partial(self.callback_current_action))
 
         self.get_logger().info(f"[Publish] {request} to {service_name}")
 

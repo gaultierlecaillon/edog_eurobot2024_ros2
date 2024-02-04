@@ -9,7 +9,8 @@
       "name": "Opening",
       "actions": [
         { "pince": "loop" },
-        { "elevator": "loop" }
+        { "elevator": "loop" },
+        { "pince": "loop" }
       ]
     }
   ]

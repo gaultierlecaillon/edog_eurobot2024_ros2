@@ -50,50 +50,24 @@ class ActuatorService(Node):
         self.get_logger().info("Pince Service has been started.")
 
     def elevator_callback(self, request, response):
-        self.get_logger().info(f"Elevator_callback Called : {request}")
-        if request.param == "loop":
-            for i in range(1):
-                self.down_elevator()
-                time.sleep(1)
-                self.up_elevator()
-                time.sleep(1)
-                self.down_elevator()
-                GPIO.output(self.EN_pin, GPIO.HIGH)
-        else:
-            self.get_logger().info("unknown action: request.param:{request.param}")
+        try:
+            self.get_logger().info(f"Elevator_callback Called : {request.param}")
+            if request.param == "loop":
+                for i in range(1):
+                    self.down_elevator()
+                    time.sleep(1)
+                    self.up_elevator()
+                    time.sleep(1)
+                    self.down_elevator()
+                    GPIO.output(self.EN_pin, GPIO.HIGH)
+            else:
+                self.get_logger().info(f"unknown action: request.param: {request.param}")
 
-        response.success = True
+            response.success = True
+        except Exception as e:
+            self.get_logger().error(f"Failed to execute elevator_callback: {e}")
+            response.success = False
         return response
-    
-    def down_elevator(self):
-        GPIO.output(self.EN_pin, GPIO.LOW)
-        step = 0
-        delta = step - self.elevator_position
-        self.get_logger().info(f"Elevator DOWN {delta}")
-
-        self.stepper_motor.motor_go(delta < 0,  # True=Clockwise, False=Counter-Clockwise
-                                    "Full",  # Step type (Full,Half,1/4,1/8,1/16,1/32)
-                                    abs(delta),  # number of steps
-                                    .0008,  # step delay [sec]
-                                    False,  # True = print verbose output
-                                    .05)  # initial delay [sec]
-        self.elevator_position = step
-    
-    def up_elevator(self):
-        GPIO.output(self.EN_pin, GPIO.LOW)
-        step = 200
-        delta = step - self.elevator_position
-        self.get_logger().info(f"Elevator UP {abs(delta)}")
-
-        self.stepper_motor.motor_go(delta < 0,  # True=Clockwise, False=Counter-Clockwise
-                                    "Full",  # Step type (Full,Half,1/4,1/8,1/16,1/32)
-                                    abs(delta),  # number of steps
-                                    .0008,  # step delay [sec]
-                                    False,  # True = print verbose output
-                                    .05)  # initial delay [sec]
-        self.elevator_position = step
-
-
     
     def pince_callback(self, request, response):
         try:
@@ -138,7 +112,34 @@ class ActuatorService(Node):
     def open_left_pince(self):
         self.kit.servo[0].angle = self.actuator_config['pince']['motor0']['open']
         self.kit.servo[1].angle = self.actuator_config['pince']['motor1']['extend']
-                  
+
+    def down_elevator(self):
+        GPIO.output(self.EN_pin, GPIO.LOW)
+        step = 0
+        delta = step - self.elevator_position
+        self.get_logger().info(f"Elevator DOWN {delta}")
+
+        self.stepper_motor.motor_go(delta < 0,  # True=Clockwise, False=Counter-Clockwise
+                                    "Full",  # Step type (Full,Half,1/4,1/8,1/16,1/32)
+                                    abs(delta),  # number of steps
+                                    .0008,  # step delay [sec]
+                                    False,  # True = print verbose output
+                                    .05)  # initial delay [sec]
+        self.elevator_position = step
+    
+    def up_elevator(self):
+        GPIO.output(self.EN_pin, GPIO.LOW)
+        step = 200
+        delta = step - self.elevator_position
+        self.get_logger().info(f"Elevator UP {abs(delta)}")
+
+        self.stepper_motor.motor_go(delta < 0,  # True=Clockwise, False=Counter-Clockwise
+                                    "Full",  # Step type (Full,Half,1/4,1/8,1/16,1/32)
+                                    abs(delta),  # number of steps
+                                    .0008,  # step delay [sec]
+                                    False,  # True = print verbose output
+                                    .05)  # initial delay [sec]
+        self.elevator_position = step                  
     
     def loadActuatorConfig(self):
         with open('/home/edog/ros2_ws/src/control_package/resource/actuatorConfig.json') as file:
