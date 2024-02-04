@@ -39,17 +39,53 @@ class ActuatorService(Node):
         self.get_logger().info("Pince Service has been started.")
 
     def pince_callback(self, request, response):
-
         self.get_logger().info(f"Pince_callback Called : {request}")
+
+        for i in range(10):
+            self.get_logger().info(f"Close")
+            self.close_pince()
+            time.sleep(1)
+
+            self.get_logger().info(f"Open")
+            self.open_pince()
+            time.sleep(1)
+
+            '''
+            self.get_logger().info(f"Right")
+            self.open_right_pince()
+            time.sleep(1)
+            
+            self.get_logger().info(f"Right")
+            self.open_left_pince()
+            time.sleep(1)
+            '''
+
         response.success = True
         return response
     
+    def close_pince(self):
+        self.kit.servo[0].angle = self.actuator_config['pince']['motor0']['close']
+        self.kit.servo[1].angle = self.actuator_config['pince']['motor1']['close']
+            
+    def open_pince(self):
+        self.kit.servo[0].angle = self.actuator_config['pince']['motor0']['open']
+        self.kit.servo[1].angle = self.actuator_config['pince']['motor1']['open']
+              
+    def open_right_pince(self):
+        self.kit.servo[0].angle = self.actuator_config['pince']['motor0']['open']
+        self.kit.servo[1].angle = self.actuator_config['pince']['motor1']['close']
+                
+    def open_left_pince(self):
+        self.kit.servo[0].angle = self.actuator_config['pince']['motor0']['close']
+        self.kit.servo[1].angle = self.actuator_config['pince']['motor1']['open']
+                  
+    
     def loadActuatorConfig(self):
-        with open('/home/edog/ros2_ws/src/control_package/resource/armConfig.json') as file:
+        with open('/home/edog/ros2_ws/src/control_package/resource/actuatorConfig.json') as file:
             config = json.load(file)
-        self.get_logger().info(f"[Loading Arm Config] armConfig.json")
+        self.get_logger().info(f"[Loading Actuator Config] actuatorConfig.json")
 
-        return config['calibration']
+        return config
 
 
 

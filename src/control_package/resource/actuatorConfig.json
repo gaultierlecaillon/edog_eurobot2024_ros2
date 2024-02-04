@@ -1,0 +1,25 @@
+{
+  "pince": {
+    "motor0": {
+      "close": 4,
+      "open": 82,
+      "extend": 102
+    },
+    "motor1": {
+      "close": 167,
+      "open": 88,
+      "extend": 66
+    }
+  },
+  "solarpanel": {
+    "motor5": {
+      "default": 90,
+      "yellow": 110,
+      "purple": 70
+    },
+    "motor4": {
+      "open": 180,
+      "close": 120
+    }
+  }
+}
