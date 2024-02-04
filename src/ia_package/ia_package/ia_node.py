@@ -94,6 +94,7 @@ class IANode(Node):
             "tirette_topic",
             lambda msg: self.callback_waiting_tirette(msg, param), 1)
 
+
     def callback_waiting_tirette(self, msg, param):
         if msg.data == cast_str_bool(param):
             self.update_current_action_status('done')
@@ -119,10 +120,10 @@ class IANode(Node):
 
         self.get_logger().info(f"[Publish] {request} to cmd_calibration_service")
 
-    def grab(self, param):
+    def solarpanel(self, param):
         service_name = "cmd_arm_service"
 
-        self.get_logger().info(f"Performing grab action with param: {param}")
+        self.get_logger().info(f"Performing 'solarpanel' action with param: {param}")
 
         client = self.create_client(NullBool, service_name)
         while not client.wait_for_service(1):

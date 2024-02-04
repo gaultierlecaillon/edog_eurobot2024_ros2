@@ -1,0 +1,6 @@
+--2023-10-04 20:35:38--  https://cdn.fbsbx.com/v/t59.2708-21/386568223_225726103830384_6384424282050469990_n.ico/favicon.ico?_nc_cat=102
+Resolving cdn.fbsbx.com (cdn.fbsbx.com)... 157.240.17.15, 2a03:2880:f05b:10:face:b00c:0:3
+Connecting to cdn.fbsbx.com (cdn.fbsbx.com)|157.240.17.15|:443... connected.
+HTTP request sent, awaiting response... 403 Forbidden
+2023-10-04 20:35:38 ERROR 403: Forbidden.
+

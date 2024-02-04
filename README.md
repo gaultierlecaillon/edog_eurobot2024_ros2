@@ -31,6 +31,10 @@ Build a specific package with symlink
 ```shell
 colcon build --packages-select hardware_package --symlink-install
 ```
+FUlll
+```shell
+colcon build --allow-overriding actuator_package --packages-select actuator_package --symlink-install
+```
 
 
 Create a Node
