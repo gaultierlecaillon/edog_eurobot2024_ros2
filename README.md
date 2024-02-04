@@ -25,6 +25,8 @@ ros2 pkg create hardware_package --build-type ament_python --dependencies rclpy
 Build a specific package
 ```shell
 colcon build --packages-select hardware_package
+colcon build --allow-overriding actuator_package --packages-select actuator_package 
+
 ```
 
 Build a specific package with symlink

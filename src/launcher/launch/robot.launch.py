@@ -26,10 +26,10 @@ def generate_launch_description():
         name="motion_service"
     )
 
-    arm_service = Node(
+    actuator_service = Node(
         package="actuator_package",
-        executable="arm_service",
-        name="arm_service"
+        executable="actuator_service",
+        name="actuator_service"
     )
 
     ia = Node(
@@ -42,7 +42,7 @@ def generate_launch_description():
     ld.add_action(tirette_publisher)
     ld.add_action(lidar_publisher)
     ld.add_action(motion_service)
-    ld.add_action(arm_service)
+    ld.add_action(actuator_service)
     ld.add_action(ia)
 
     return ld

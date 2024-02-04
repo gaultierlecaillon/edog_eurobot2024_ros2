@@ -7,6 +7,7 @@ from functools import partial
 from std_msgs.msg import Bool
 from robot_interfaces.srv import PositionBool
 from robot_interfaces.srv import CmdPositionService
+from robot_interfaces.srv import CmdActuatorService
 from robot_interfaces.srv import BoolBool
 from robot_interfaces.srv import IntBool
 from robot_interfaces.srv import NullBool
@@ -120,19 +121,18 @@ class IANode(Node):
 
         self.get_logger().info(f"[Publish] {request} to cmd_calibration_service")
 
-    def solarpanel(self, param):
-        service_name = "cmd_arm_service"
-
-        self.get_logger().info(f"Performing 'solarpanel' action with param: {param}")
-
-        client = self.create_client(NullBool, service_name)
+    def pince(self, param):
+        service_name = "cmd_pince_service"
+        self.get_logger().info(f"Performing 'Pince' action with param: {param}")
+        client = self.create_client(CmdActuatorService, service_name)
         while not client.wait_for_service(1):
             self.get_logger().warn(f"Waiting for Server {service_name} to be available...")
 
-        request = NullBool.Request()
+        request = CmdActuatorService.Request()
+        request.param = str(param)
         client.call_async(request)
 
-        self.get_logger().info(f"[Publish] {request} to cmd_arm_service")
+        self.get_logger().info(f"[Publish] {request} to {service_name}")
 
     def unstack(self, param):
         service_name = "cmd_arm_unstack_service"  # TODO unstack and drop and grab soulg be the same service
