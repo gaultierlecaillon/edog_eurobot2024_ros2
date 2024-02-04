@@ -21,47 +21,107 @@ from RpiMotorLib import RpiMotorLib
 
 
 class ActuatorService(Node):
+    # Stepper Config
+    direction = 22  # Direction (DIR) GPIO Pin
+    step = 23  # Step GPIO Pin
+    EN_pin = 24  # enable pin (LOW to enable)
 
     # Node State
     motion_complete = False
     actuator_config = None
+    elevator_position = 0
 
     def __init__(self):
         super().__init__("actuator_service")
         self.actuator_config = self.loadActuatorConfig()
         self.kit = ServoKit(channels=16)
+        self.initStepper()
         
         self.create_service(
             CmdActuatorService,
             "cmd_pince_service",
             self.pince_callback)
+        
+        self.create_service(
+            CmdActuatorService,
+            "cmd_elevator_service",
+            self.elevator_callback)
 
         self.get_logger().info("Pince Service has been started.")
 
-    def pince_callback(self, request, response):
-        self.get_logger().info(f"Pince_callback Called : {request}")
-
-        for i in range(10):
-            self.get_logger().info(f"Close")
-            self.close_pince()
-            time.sleep(1)
-
-            self.get_logger().info(f"Open")
-            self.open_pince()
-            time.sleep(1)
-
-            '''
-            self.get_logger().info(f"Right")
-            self.open_right_pince()
-            time.sleep(1)
-            
-            self.get_logger().info(f"Right")
-            self.open_left_pince()
-            time.sleep(1)
-            '''
+    def elevator_callback(self, request, response):
+        self.get_logger().info(f"Elevator_callback Called : {request}")
+        if request.param == "loop":
+            for i in range(1):
+                self.down_elevator()
+                time.sleep(1)
+                self.up_elevator()
+                time.sleep(1)
+                self.down_elevator()
+                GPIO.output(self.EN_pin, GPIO.HIGH)
+        else:
+            self.get_logger().info("unknown action: request.param:{request.param}")
 
         response.success = True
         return response
+    
+    def down_elevator(self):
+        GPIO.output(self.EN_pin, GPIO.LOW)
+        step = 0
+        delta = step - self.elevator_position
+        self.get_logger().info(f"Elevator DOWN {delta}")
+
+        self.stepper_motor.motor_go(delta < 0,  # True=Clockwise, False=Counter-Clockwise
+                                    "Full",  # Step type (Full,Half,1/4,1/8,1/16,1/32)
+                                    abs(delta),  # number of steps
+                                    .0008,  # step delay [sec]
+                                    False,  # True = print verbose output
+                                    .05)  # initial delay [sec]
+        self.elevator_position = step
+    
+    def up_elevator(self):
+        GPIO.output(self.EN_pin, GPIO.LOW)
+        step = 200
+        delta = step - self.elevator_position
+        self.get_logger().info(f"Elevator UP {abs(delta)}")
+
+        self.stepper_motor.motor_go(delta < 0,  # True=Clockwise, False=Counter-Clockwise
+                                    "Full",  # Step type (Full,Half,1/4,1/8,1/16,1/32)
+                                    abs(delta),  # number of steps
+                                    .0008,  # step delay [sec]
+                                    False,  # True = print verbose output
+                                    .05)  # initial delay [sec]
+        self.elevator_position = step
+
+
+    
+    def pince_callback(self, request, response):
+        try:
+            self.get_logger().info(f"Pince_callback Called : {request}")
+            timesleep = 0.75
+            for i in range(1):
+                self.get_logger().info("Open")
+                self.open_pince()
+                time.sleep(timesleep)
+
+                self.get_logger().info("Right")
+                self.open_right_pince()
+                time.sleep(timesleep)
+                
+                self.get_logger().info("Left")
+                self.open_left_pince()
+                time.sleep(timesleep)
+
+                self.get_logger().info("Close")
+                self.close_pince()
+                time.sleep(timesleep)
+
+            response.success = True
+        except Exception as e:
+            self.get_logger().error(f"Failed to execute pince_callback: {e}")
+            response.success = False
+        return response
+
     
     def close_pince(self):
         self.kit.servo[0].angle = self.actuator_config['pince']['motor0']['close']
@@ -72,12 +132,12 @@ class ActuatorService(Node):
         self.kit.servo[1].angle = self.actuator_config['pince']['motor1']['open']
               
     def open_right_pince(self):
-        self.kit.servo[0].angle = self.actuator_config['pince']['motor0']['open']
-        self.kit.servo[1].angle = self.actuator_config['pince']['motor1']['close']
+        self.kit.servo[0].angle = self.actuator_config['pince']['motor0']['extend']
+        self.kit.servo[1].angle = self.actuator_config['pince']['motor1']['open']
                 
     def open_left_pince(self):
-        self.kit.servo[0].angle = self.actuator_config['pince']['motor0']['close']
-        self.kit.servo[1].angle = self.actuator_config['pince']['motor1']['open']
+        self.kit.servo[0].angle = self.actuator_config['pince']['motor0']['open']
+        self.kit.servo[1].angle = self.actuator_config['pince']['motor1']['extend']
                   
     
     def loadActuatorConfig(self):
@@ -86,8 +146,12 @@ class ActuatorService(Node):
         self.get_logger().info(f"[Loading Actuator Config] actuatorConfig.json")
 
         return config
-
-
+    
+    def initStepper(self):
+        self.stepper_motor = RpiMotorLib.A4988Nema(self.direction, self.step, (21, 21, 21), "DRV8825")
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(self.EN_pin, GPIO.OUT)  # set enable pin as output
+        GPIO.output(self.EN_pin, GPIO.HIGH)
 
 def main(args=None):
     rclpy.init(args=args)

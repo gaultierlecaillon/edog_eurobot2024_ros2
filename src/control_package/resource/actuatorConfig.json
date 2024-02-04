@@ -1,9 +1,9 @@
 {
   "pince": {
     "motor0": {
-      "close": 4,
-      "open": 82,
-      "extend": 102
+      "close": 0,
+      "open": 80,
+      "extend": 100
     },
     "motor1": {
       "close": 167,
