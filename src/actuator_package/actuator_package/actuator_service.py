@@ -47,6 +47,11 @@ class ActuatorService(Node):
             "cmd_elevator_service",
             self.elevator_callback)
 
+        self.create_service(
+            CmdActuatorService,
+            "cmd_solarpanel_service",
+            self.solarpanel_callback)
+
         self.get_logger().info("Pince Service has been started.")
 
     def elevator_callback(self, request, response):
@@ -66,6 +71,36 @@ class ActuatorService(Node):
             response.success = True
         except Exception as e:
             self.get_logger().error(f"Failed to execute elevator_callback: {e}")
+            response.success = False
+        return response
+
+    def solarpanel_callback(self, request, response):
+        try:
+            self.get_logger().info(f"solarpanel_callback Called : {request}")
+            timesleep = 1
+            for i in range(1):
+                self.get_logger().info("Open")
+                self.kit.servo[4].angle = self.actuator_config['solarpanel']['motor4']['open']
+                self.kit.servo[5].angle = self.actuator_config['solarpanel']['motor5']['default']
+                time.sleep(timesleep)
+
+                self.get_logger().info("Right")
+                self.kit.servo[5].angle = self.actuator_config['solarpanel']['motor5']['yellow']
+                time.sleep(timesleep)
+
+                self.get_logger().info("Right")
+                self.kit.servo[5].angle = self.actuator_config['solarpanel']['motor5']['purple']
+                time.sleep(timesleep)
+
+                self.get_logger().info("Close")
+                self.kit.servo[5].angle = self.actuator_config['solarpanel']['motor5']['default']
+                time.sleep(0.2)
+                self.kit.servo[4].angle = self.actuator_config['solarpanel']['motor4']['close']
+                time.sleep(timesleep)
+
+            response.success = True
+        except Exception as e:
+            self.get_logger().error(f"Failed to execute pince_callback: {e}")
             response.success = False
         return response
     

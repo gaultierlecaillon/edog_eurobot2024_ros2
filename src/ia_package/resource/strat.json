@@ -8,9 +8,10 @@
     {
       "name": "Opening",
       "actions": [
+        { "forward": "100" },
         { "pince": "loop" },
         { "elevator": "loop" },
-        { "pince": "loop" }
+        { "solarpanel": "loop" }
       ]
     }
   ]

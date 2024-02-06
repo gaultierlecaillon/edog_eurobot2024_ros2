@@ -121,6 +121,22 @@ class IANode(Node):
 
         self.get_logger().info(f"[Publish] {request} to cmd_calibration_service")
 
+    def solarpanel(self, param):
+        service_name = "cmd_solarpanel_service"
+        self.get_logger().info(f"Performing 'SolarPanel' action with param: {param}")
+        client = self.create_client(CmdActuatorService, service_name)
+        while not client.wait_for_service(1):
+            self.get_logger().warn(f"Waiting for Server {service_name} to be available...")
+
+        request = CmdActuatorService.Request()
+        request.param = param
+        future = client.call_async(request)
+
+        future.add_done_callback(
+            partial(self.callback_current_action))
+
+        self.get_logger().info(f"[Publish] {request} to {service_name}")
+
     def pince(self, param):
         service_name = "cmd_pince_service"
         self.get_logger().info(f"Performing 'Pince' action with param: {param}")
