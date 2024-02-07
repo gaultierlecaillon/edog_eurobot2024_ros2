@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import time
 import json
 import rclpy
@@ -100,10 +101,7 @@ class MotionService(Node):
     def calibration_callback(self, request, response):
 
         # Find a connected ODrive (this will block until you connect one)
-        self.get_logger().info(f"Finding an odrive...")
-        self.odrv0 = odrive.find_any()
-        self.get_logger().info(f"OdriveBoard Found ! VBus Voltage: {self.odrv0.vbus_voltage}")
-        self.odrv0.clear_errors()
+        self.connect_to_odrive()       
 
         if self.is_in_closed_loop_control():
             self.disable_motor_loop_control()
@@ -238,27 +236,34 @@ class MotionService(Node):
         return response
 
     def motionRotate(self, target_angle):
-        rotation_to_do = self.r_ + target_angle
-        increment_mm = target_angle * float(self.calibration_config["rotation"]["coef"])
-        increment_pos = float(self.calibration_config["linear"]["coef"]) * increment_mm
+        try:
+            rotation_to_do = self.r_ + target_angle
+            increment_mm = target_angle * float(self.calibration_config["rotation"]["coef"])
+            increment_pos = float(self.calibration_config["linear"]["coef"]) * increment_mm
 
-        self.get_logger().warn(f"[MotionRotate] target_angle={target_angle}°, rotation_to_do={rotation_to_do}°")
+            self.get_logger().warn(f"[MotionRotate] target_angle={target_angle}°, rotation_to_do={rotation_to_do}°")
 
-        self.call_motion_has_started(increment_pos, -increment_pos)
+            self.call_motion_has_started(increment_pos, -increment_pos)
 
-        self.odrv0.axis0.controller.move_incremental(increment_pos, False)
-        self.odrv0.axis1.controller.move_incremental(-increment_pos, False)
+            self.odrv0.axis0.controller.move_incremental(increment_pos, False)
+            self.odrv0.axis1.controller.move_incremental(-increment_pos, False)
+        except AttributeError:
+            self.get_logger().error("NoOdrive Initiated")
+            self.shutdown_node()
 
     def motionForward(self, increment_mm):
+        try:
+            increment_pos = float(self.calibration_config["linear"]["coef"]) * increment_mm
 
-        increment_pos = float(self.calibration_config["linear"]["coef"]) * increment_mm
+            self.get_logger().warn(f"[MotionForward] (increment_mm={increment_mm} mm, increment_pos={increment_pos} pos)")
 
-        self.get_logger().warn(f"[MotionForward] (increment_mm={increment_mm} mm, increment_pos={increment_pos} pos)")
+            self.call_motion_has_started(increment_pos, increment_pos)
 
-        self.call_motion_has_started(increment_pos, increment_pos)
-
-        self.odrv0.axis0.controller.move_incremental(increment_pos, False)
-        self.odrv0.axis1.controller.move_incremental(increment_pos, False)
+            self.odrv0.axis0.controller.move_incremental(increment_pos, False)
+            self.odrv0.axis1.controller.move_incremental(increment_pos, False)
+        except AttributeError:
+            self.get_logger().error("\033[91m[🚨 ERROR] Something went wrong with Odrive 🚨\033[0m")  
+            self.shutdown_node()
 
     def call_motion_has_started(self, increment_pos_0, increment_pos_1):
         service_name = "motion_has_start"
@@ -417,6 +422,22 @@ class MotionService(Node):
         self.get_logger().info(
             f"[Robot Infos] x:{self.x_}, y:{self.y_}, r:{self.r_}, encoder_0_index: {self.getEncoderIndex(self.odrv0.axis0)}, encoder_1_index:{self.getEncoderIndex(self.odrv0.axis1)}")
 
+    def connect_to_odrive(self):
+        try:
+            self.get_logger().info("Attempting to connect to ODrive...")
+            self.odrv0 = odrive.find_any(timeout=5)  # Adjust timeout as needed
+            if self.odrv0 is None:
+                raise Exception("\033[38;5;208mNo Odrive found 😔 we need it baguette\033[0m\n")
+            self.get_logger().info(f"🎉 OdriveBoard connected successfully ! (VBus Voltage: {self.odrv0.vbus_voltage}⚡)")
+            self.odrv0.clear_errors()
+        except Exception as e:
+            self.get_logger().error('\033[91m' + str(e) + '\033[0m', throttle_duration_sec=1)  # Red text for errors
+
+
+    def shutdown_node(self):
+        self.get_logger().info("\033[91mShutting down node due to ODrive connection failure. 💥\033[0m")
+        # Perform any necessary cleanup here
+        os.kill(os.getpid(), signal.SIGINT)  # Send SIGINT to the current process This method uses os.kill to send a SIGINT (interrupt signal) to the current 
 
 def main(args=None):
     rclpy.init(args=args)

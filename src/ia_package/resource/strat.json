@@ -3,15 +3,12 @@
   "name": "start.json",
   "description": "start wip",
   "color": "green",
-  "startingPos": "250,1775,0",
+  "startingPos": "500,500,0",
   "strategy": [
     {
       "name": "Opening",
       "actions": [
-        { "forward": "100" },
-        { "pince": "loop" },
-        { "elevator": "loop" },
-        { "solarpanel": "loop" }
+        { "graber": "loop" }
       ]
     }
   ]

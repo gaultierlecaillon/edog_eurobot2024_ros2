@@ -51,6 +51,11 @@ class ActuatorService(Node):
             CmdActuatorService,
             "cmd_solarpanel_service",
             self.solarpanel_callback)
+        
+        self.create_service(
+            CmdActuatorService,
+            "cmd_graber_service",
+            self.graber_callback)
 
         self.get_logger().info("Pince Service has been started.")
 
@@ -123,6 +128,27 @@ class ActuatorService(Node):
 
                 self.get_logger().info("Close")
                 self.close_pince()
+                time.sleep(timesleep)
+
+            response.success = True
+        except Exception as e:
+            self.get_logger().error(f"Failed to execute pince_callback: {e}")
+            response.success = False
+        return response
+
+    def graber_callback(self, request, response):
+        try:
+            self.get_logger().info(f"graber_callback Called : {request}")
+            timesleep = 2
+            for i in range(10):
+                self.get_logger().info("Open")
+                self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['open']
+                self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']
+                time.sleep(timesleep)
+
+                self.get_logger().info("Close")
+                self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['close']
+                self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['close']
                 time.sleep(timesleep)
 
             response.success = True

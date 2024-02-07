@@ -153,6 +153,22 @@ class IANode(Node):
 
         self.get_logger().info(f"[Publish] {request} to {service_name}")
 
+    def graber(self, param):
+        service_name = "cmd_graber_service"
+        self.get_logger().info(f"Performing 'Graber' action with param: {param}")
+        client = self.create_client(CmdActuatorService, service_name)
+        while not client.wait_for_service(1):
+            self.get_logger().warn(f"Waiting for Server {service_name} to be available...")
+
+        request = CmdActuatorService.Request()
+        request.param = param
+        future = client.call_async(request)
+
+        future.add_done_callback(
+            partial(self.callback_current_action))
+
+        self.get_logger().info(f"[Publish] {request} to {service_name}")
+
     def elevator(self, param):
         service_name = "cmd_elevator_service"
         self.get_logger().info(f"Performing 'Elevator' action with param: {param}")
@@ -293,20 +309,29 @@ class IANode(Node):
         self.current_action_already_printed = False
 
     def load_strategy(self):
-        with open('/home/edog/ros2_ws/src/ia_package/resource/' + self.strategy_filename + '.json') as file:
-            self.config = json.load(file)
+        try:
+            # Attempt to open and load the strategy file
+            with open('/home/edog/ros2_ws/src/ia_package/resource/' + self.strategy_filename + '.json') as file:
+                self.config = json.load(file)
 
-        self.get_logger().info(f"[Loading Strategy] {self.config['name']} ({self.config['description']})")
-        self.get_logger().info(f"[Start] Color: {self.config['color']} | StartPos:({self.config['startingPos']})")
+            # Logging the loaded strategy information
+            self.get_logger().info(f"[Loading Strategy] {self.config['name']} ({self.config['description']})")
+            self.get_logger().info(f"[Start] Color: {self.config['color']} | StartPos:({self.config['startingPos']})")
 
-        for strat in self.config['strategy']:
-            for action in strat['actions']:
-                self.actions_dict.append(
-                    {
-                        'action': action,
-                        'status': 'pending'
-                    }
-                )
+            # Processing the strategy actions
+            self.actions_dict = []  # Assuming you want to reset or initialize it here
+            for strat in self.config['strategy']:
+                for action in strat['actions']:
+                    self.actions_dict.append(
+                        {
+                            'action': action,
+                            'status': 'pending'
+                        }
+                    )
+        except Exception as e:
+            # Log the error message in red text
+            self.get_logger().error('\033[91m' + "Error loading strategy: " + str(e) + '\033[0m')
+
 
 
 def cast_str_bool(var):
