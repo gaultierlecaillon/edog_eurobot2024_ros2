@@ -141,15 +141,15 @@ class ActuatorService(Node):
             self.get_logger().info(f"graber_callback Called : {request}")
             timesleep = 2
             for i in range(10):
-                self.get_logger().info("Open")
+                self.up_elevator()                
                 self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['open']
                 self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']
-                time.sleep(timesleep)
-
-                self.get_logger().info("Close")
-                self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['close']
+                time.sleep(1)
+                self.down_elevator()
+                time.sleep(1)  
                 self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['close']
-                time.sleep(timesleep)
+                time.sleep(1)  
+
 
             response.success = True
         except Exception as e:
@@ -187,10 +187,12 @@ class ActuatorService(Node):
                                     False,  # True = print verbose output
                                     .05)  # initial delay [sec]
         self.elevator_position = step
+        GPIO.output(self.EN_pin, GPIO.HIGH)
+
     
     def up_elevator(self):
         GPIO.output(self.EN_pin, GPIO.LOW)
-        step = 200
+        step = 300
         delta = step - self.elevator_position
         self.get_logger().info(f"Elevator UP {abs(delta)}")
 

@@ -17,8 +17,8 @@
       "open": 90
     },
     "motor3": {
-      "close": 88,
-      "open": 180
+      "close": 180,
+      "open": 88
     }
   },
   "solarpanel": {
