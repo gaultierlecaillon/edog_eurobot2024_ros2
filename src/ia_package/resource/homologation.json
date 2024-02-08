@@ -1,0 +1,28 @@
+{
+    "type": "Homologation",
+    "name": "homologation.json",
+    "description": "Strat that move forward, grab plants and drop them",
+    "color": "green",
+    "startingPos": "500,500,0",
+    "strategy": [
+        {
+            "name": "Starting Blocks",
+            "actions": [
+                {
+                    "calibrate": "True"
+                }
+            ]
+        },
+        {
+            "name": "Opening",
+            "actions": [
+                {
+                    "goto": "1500,500,0"
+                },
+                {
+                    "graber": "loop"
+                }
+            ]
+        }
+    ]
+}
