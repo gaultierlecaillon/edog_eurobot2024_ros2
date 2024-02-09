@@ -136,30 +136,40 @@ class ActuatorService(Node):
             response.success = False
         return response
 
-    def graber_callback(self, request, response):
+    async def graber_callback(self, request, response):
         try:
             self.get_logger().info(f"graber_callback Called : {request}")
-            self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['close']
-            time.sleep(2) 
-            for i in range(3):
-                self.up_elevator() 
-                time.sleep(2)               
-                self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['open']
+            if request.param == "":
+                self.up_elevator()
+                self.open_pince()
+                time.sleep(0.5)
+                await self.cmd_forward(100)
+
+            elif request.param == "loop":                
+                self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['close']
+                time.sleep(2) 
+                for i in range(3):
+                    self.up_elevator() 
+                    time.sleep(2)               
+                    self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['open']
+                    self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']
+                    time.sleep(2)
+                    self.down_elevator()
+                    time.sleep(1)  
+                    self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['close']
+                    time.sleep(1)
+                
+                self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['close']
                 self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']
-                time.sleep(2)
-                self.down_elevator()
-                time.sleep(1)  
-                self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['close']
-                time.sleep(1)
-            
-            self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['close']
-            self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']
+            else:
+                self.get_logger().error(f"graber_callback unknown params")
 
 
             response.success = True
         except Exception as e:
             self.get_logger().error(f"Failed to execute pince_callback: {e}")
             response.success = False
+
         return response
 
     
@@ -207,7 +217,24 @@ class ActuatorService(Node):
                                     .0008,  # step delay [sec]
                                     False,  # True = print verbose output
                                     .05)  # initial delay [sec]
-        self.elevator_position = step                  
+        self.elevator_position = step       
+
+    ''' Motion Funcitons '''
+    def cmd_forward(self, distance_mm):
+        service_name = "cmd_forward_service"
+
+        self.get_logger().info(f"[Exec Action] forward of: {distance_mm}mm")
+        client = self.create_client(IntBool, service_name)
+        while not client.wait_for_service(1):
+            self.get_logger().warn(f"Waiting for Server {service_name} to be available...")
+
+        request = IntBool.Request()
+        request.distance_mm = int(distance_mm)
+        client.call_async(request)
+
+        self.get_logger().info(f"[Publish] {request} to {service_name}")
+
+    ''' EndMotion Funcitons '''          
     
     def loadActuatorConfig(self):
         with open('/home/edog/ros2_ws/src/control_package/resource/actuatorConfig.json') as file:

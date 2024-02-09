@@ -319,12 +319,12 @@ class MotionService(Node):
                     f"\033[38;5;46mMotion completed in {time.time() - self.current_motion['start']:.3f} seconds (pos_error_0:{pos_error_0}, pos_error_1:{pos_error_1}\n\033[0m\n")
                 motion_completed = True
 
-
             elif time.time() - self.current_motion['start'] > timeout:
-                self.get_logger().error(
-                    f"Motion completion timeout (pos_error_0: {pos_error_0}, pos_error_1: {pos_error_1}")
+                error_message = f"Motion completion timeout (pos_error_0: {pos_error_0}, pos_error_1: {pos_error_1})"
+                self.get_logger().error(f'\033[91m{error_message}\033[0m')
+
                 self.print_robot_infos()
-                motion_completed = True
+                motion_completed = False
 
             '''
             self.get_logger().info(

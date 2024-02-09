@@ -76,17 +76,12 @@ class IANode(Node):
             rclpy.shutdown()
 
     def is_motion_complete_callback(self, msg):
-        if msg.data:
-            if next(iter(self.actions_dict[0]['action'])) == 'unstack' and self.unstack_num_action < 18:
-                self.unstack_num_action += 1
-                print("self.unstack_num_action", self.unstack_num_action)
-            elif next(iter(self.actions_dict[0]['action'])) == 'unstack' and self.unstack_num_action >= 18:
-                self.unstack_num_action = 0
-                self.update_current_action_status('done')
-                print("DOOOOOOOOOONE")
-            else:
-                self.update_current_action_status('done')
-                print("3333333333333333")
+        if msg.data:                
+            self.update_current_action_status('done')
+            self.get_logger().info("ACTION DONE !")
+        else:
+            self.get_logger().info("ACTION NOT DONE ! :(")
+
 
 
     def waiting_tirette(self, param):

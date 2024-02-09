@@ -17,10 +17,7 @@
             "name": "Opening",
             "actions": [
                 {
-                    "goto": "1500,500,0"
-                },
-                {
-                    "graber": "loop"
+                    "graber": ""
                 }
             ]
         }
