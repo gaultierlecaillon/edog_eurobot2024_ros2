@@ -262,9 +262,9 @@ class IANode(Node):
     def transform_goto_in_cmd(self, future):
         try:
             response = future.result()
-            self.get_logger().warn(f"[callback_goto]: {response.cmd}")
+            self.get_logger().warn(f"[callback_goto]: {response.cmd}")            
 
-            self.actions_dict.pop(0)
+            #self.actions_dict.pop(0)
             if response.cmd.final_rotation != 0:
                 self.actions_dict.insert(0, {
                     'action': {'rotate': response.cmd.final_rotation},
@@ -298,7 +298,11 @@ class IANode(Node):
 
     def update_current_action_status(self, status):
         if status == "done":
+            self.get_logger().info(
+                f"\033[38;5;208m[ACTION COMPLETE] {self.actions_dict[0]}\033[0m")
             self.actions_dict.pop(0)
+            self.get_logger().info(
+                f"[NEXT ACTION(S)] {self.actions_dict}")
         else:
             self.actions_dict[0]['status'] = status
         self.current_action_already_printed = False

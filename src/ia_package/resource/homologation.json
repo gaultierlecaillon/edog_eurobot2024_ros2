@@ -6,19 +6,16 @@
     "startingPos": "500,500,0",
     "strategy": [
         {
-            "name": "Starting Blocks",
+            "label": "Starting Blocks",
             "actions": [
-                {
-                    "calibrate": "True"
-                }
+                { "calibrate": "True" }
             ]
         },
         {
-            "name": "Opening",
-            "actions": [
-                {
-                    "graber": ""
-                }
+            "label": "Opening",
+            "actions": [                
+                {"forward": "100"},
+                {"forward": "-100"}
             ]
         }
     ]

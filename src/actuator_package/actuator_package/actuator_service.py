@@ -207,7 +207,7 @@ class ActuatorService(Node):
     
     def up_elevator(self):
         GPIO.output(self.EN_pin, GPIO.LOW)
-        step = 375
+        step = 350
         delta = step - self.elevator_position
         self.get_logger().info(f"Elevator UP {abs(delta)}")
 
@@ -248,6 +248,7 @@ class ActuatorService(Node):
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.EN_pin, GPIO.OUT)  # set enable pin as output
         GPIO.output(self.EN_pin, GPIO.HIGH)
+        time.sleep(0.5)
 
 def main(args=None):
     rclpy.init(args=args)
