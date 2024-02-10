@@ -8,11 +8,10 @@ from robot_interfaces.msg import Position
 from robot_interfaces.msg import CmdPositionResult
 from robot_interfaces.srv import CmdPositionService
 from robot_interfaces.srv import CmdMotionHasStart
+from robot_interfaces.srv import CmdForwardService
 from robot_interfaces.srv import PositionBool
-from robot_interfaces.srv import BoolBool
-from robot_interfaces.srv import IntBool
-from robot_interfaces.srv import FloatBool
-from robot_interfaces.srv import NullBool
+from robot_interfaces.srv import CmdRotateService
+from robot_interfaces.msg import MotionCompleteResponse
 from std_msgs.msg import Bool
 
 # odrive
@@ -45,6 +44,8 @@ class MotionService(Node):
         'evitement': True,
     }
 
+    last_callback_service_requester = ""
+
     def __init__(self):
         super().__init__("motion_service")
 
@@ -63,12 +64,12 @@ class MotionService(Node):
             self.goto_callback)
 
         self.forward_service_ = self.create_service(
-            IntBool,
+            CmdForwardService,
             "cmd_forward_service",
             self.forward_callback)
 
         self.rotate_service_ = self.create_service(
-            FloatBool,
+            CmdRotateService,
             "cmd_rotate_service",
             self.rotate_callback)
 
@@ -84,7 +85,7 @@ class MotionService(Node):
             self.emergency_stop_callback,
             10)
 
-        self.publisher_is_complete = self.create_publisher(Bool, 'is_motion_complete', 10)
+        self.publisher_is_complete = self.create_publisher(MotionCompleteResponse, 'is_motion_complete', 10)
 
         self.publisher_pos = self.create_publisher(Position, 'robot_position', 10)
 
@@ -201,7 +202,9 @@ class MotionService(Node):
         self.x_target = self.x_ + round(request.distance_mm * math.cos(math.radians(self.r_)), 2)
         self.y_target = self.y_ + round(request.distance_mm * math.sin(math.radians(self.r_)), 2)
 
-        response.success = True
+        self.last_callback_service_requester = str(request.service_requester)
+        response.motion_completed_response.service_requester = request.service_requester
+        response.motion_completed_response.success = True
         return response
 
     def rotate_callback(self, request, response):
@@ -210,7 +213,9 @@ class MotionService(Node):
         self.motionRotate(request.angle_deg)
         self.r_ += request.angle_deg
 
-        response.success = True
+        self.last_callback_service_requester = str(request.service_requester)
+        response.motion_completed_response.service_requester = request.service_requester
+        response.motion_completed_response.success = True
         return response
 
     def goto_callback(self, request, response):
@@ -338,8 +343,9 @@ class MotionService(Node):
             self.y_ = self.y_target
 
             # Publish True on the 'is_motion_complete' topic
-            msg = Bool()
-            msg.data = True
+            msg = MotionCompleteResponse()
+            msg.service_requester = self.last_callback_service_requester #TODO fix, can be also from rotate, only forward is managed
+            msg.success = True
             self.publisher_is_complete.publish(msg)
 
             self.pos_estimate_0 = self.odrv0.axis0.encoder.pos_estimate

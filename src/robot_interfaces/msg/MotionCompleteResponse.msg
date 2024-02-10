@@ -1,0 +1,2 @@
+string service_requester
+bool success

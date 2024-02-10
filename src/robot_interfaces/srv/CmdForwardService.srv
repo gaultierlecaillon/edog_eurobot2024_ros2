@@ -1,0 +1,6 @@
+# Request
+string service_requester
+int32 distance_mm
+---
+# Response
+robot_interfaces/MotionCompleteResponse motion_completed_response

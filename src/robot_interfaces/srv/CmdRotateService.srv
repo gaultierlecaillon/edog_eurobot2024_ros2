@@ -1,0 +1,6 @@
+# Request
+string service_requester
+float32 angle_deg
+---
+# Response
+robot_interfaces/MotionCompleteResponse motion_completed_response

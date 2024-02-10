@@ -7,9 +7,10 @@ from std_msgs.msg import Bool
 from robot_interfaces.srv import PositionBool
 from robot_interfaces.srv import CmdPositionService
 from robot_interfaces.srv import CmdActuatorService
-from robot_interfaces.srv import IntBool
+from robot_interfaces.srv import CmdForwardService
 from robot_interfaces.srv import NullBool
-from robot_interfaces.srv import FloatBool
+from robot_interfaces.srv import CmdRotateService
+from robot_interfaces.msg import MotionCompleteResponse
 
 
 class IANode(Node):
@@ -31,7 +32,7 @@ class IANode(Node):
         self.number_timer_ = self.create_timer(0.1, self.master_callback)
 
         self.create_subscription(
-            Bool,
+            MotionCompleteResponse,
             "is_motion_complete",
             self.is_motion_complete_callback,
             10)
@@ -73,12 +74,14 @@ class IANode(Node):
 
     def is_motion_complete_callback(self, msg):
         action_name = next(iter(self.actions_dict[0]['action']))
-        self.get_logger().info(f"\033[38;5;208m[motion_complete_callback] Received in IAService: {msg.data} for {action_name}\033[0m")
+        self.get_logger().info(f"\033[38;5;208m[motion_complete_callback] Received in IAService: {msg} for {action_name}\033[0m")
 
-        if msg.data:
+        if msg.success and msg.service_requester == str(self.__class__.__name__):
             if action_name == 'graber':
+                self.get_logger().info(f"\033[38;5;208mIgnore this motion complete graber\033[0m")
                 pass
             else:
+                self.get_logger().info(f"\033[95m[IaNode.is_motion_complete_callback] Current Action Done ! {action_name}\033[0m")
                 self.update_current_action_status('done')
 
     def waiting_tirette(self, param):
@@ -90,6 +93,7 @@ class IANode(Node):
 
     def callback_waiting_tirette(self, msg, param):
         if msg.data == cast_str_bool(param):
+            self.get_logger().info(f"\033[95m[IaNode.callback_waiting_tirette] Current Action Done ! {response}\033[0m")
             self.update_current_action_status('done')
             self.destroy_subscription(self.subscriber_)  # Unsubscribe from the topic
 
@@ -181,11 +185,12 @@ class IANode(Node):
         service_name = "cmd_forward_service"
 
         self.get_logger().info(f"[Exec Action] forward with param: '{param}'")
-        client = self.create_client(IntBool, service_name)
+        client = self.create_client(CmdForwardService, service_name)
         while not client.wait_for_service(1):
             self.get_logger().warn(f"Waiting for Server {service_name} to be available...")
 
-        request = IntBool.Request()
+        request = CmdForwardService.Request()
+        request.service_requester = str(self.__class__.__name__)
         request.distance_mm = int(param)
 
         client.call_async(request)
@@ -196,12 +201,13 @@ class IANode(Node):
         service_name = "cmd_rotate_service"
 
         self.get_logger().info(f"[Exec Action] rotate with param: '{param}'")
-        client = self.create_client(FloatBool, service_name)
+        client = self.create_client(CmdRotateService, service_name)
         while not client.wait_for_service(1):
             self.get_logger().warn(f"Waiting for Server {service_name} to be available...")
 
-        request = FloatBool.Request()
+        request = CmdRotateService.Request()
         request.angle_deg = float(param)
+        request.service_requester = str(self.__class__.__name__)
 
         client.call_async(request)
 
@@ -230,8 +236,6 @@ class IANode(Node):
     def transform_goto_in_cmd(self, future):
         try:
             response = future.result()
-            self.get_logger().warn(f"[callback_goto]: {response.cmd}")            
-
             self.get_logger().info(f"[transform_goto_in_cmd pop!] {self.actions_dict}")
             self.actions_dict.pop(0) #remove goto action and replace by rotate -> forward -> rotate
             self.get_logger().info(f"[transform_goto_in_cmd after pop] {self.actions_dict}")
@@ -262,7 +266,7 @@ class IANode(Node):
         try:
             response = future.result()
             if response.success:
-                self.get_logger().info(f"[Callback Current Action] Done ! {response}")
+                self.get_logger().info(f"\033[95m[IaNode.callback_current_action] Current Action Done ! {response}\033[0m")
                 self.update_current_action_status('done')
             else:
                 self.get_logger().info(f"Something went wrong with response: {response}")
@@ -274,11 +278,11 @@ class IANode(Node):
     def update_current_action_status(self, status):
         if status == "done":
             self.get_logger().info(
-                f"\033[38;5;208m[ACTION COMPLETE] {self.actions_dict[0]}\033[0m")
+                f"\033[38;5;208m[ACTION COMPLETE] {self.actions_dict[0]} received status: {status}\033[0m")
             self.actions_dict.pop(0)
             self.get_logger().info(
                 f"[NEXT ACTION(S)] {self.actions_dict}")
-        else:
+        else: # on going
             self.actions_dict[0]['status'] = status
         self.current_action_already_printed = False
 

@@ -23,16 +23,18 @@ find_package(rosidl_default_generators REQUIRED)
 set(msg_files
   "msg/Position.msg"
   "msg/CmdPositionResult.msg"
+  "msg/MotionCompleteResponse.msg"
 )
 
 set(srv_files
   "srv/CmdPositionService.srv"
   "srv/CmdMotionHasStart.srv"
   "srv/CmdActuatorService.srv"
+  "srv/CmdForwardService.srv"
+  "srv/CmdRotateService.srv"
   "srv/BoolBool.srv"
   "srv/IntBool.srv"
-  "srv/NullBool.srv"
-  "srv/FloatBool.srv"
+  "srv/NullBool.srv"  
   "srv/PositionBool.srv"
 )
 

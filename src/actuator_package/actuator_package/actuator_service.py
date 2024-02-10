@@ -5,9 +5,10 @@ import rclpy
 from rclpy.node import Node
 from functools import partial
 import RPi.GPIO as GPIO
-from robot_interfaces.srv import IntBool
 from std_msgs.msg import Bool
 from robot_interfaces.srv import CmdActuatorService
+from robot_interfaces.srv import CmdForwardService
+from robot_interfaces.msg import MotionCompleteResponse
 
 # Servo
 from adafruit_servokit import ServoKit
@@ -34,7 +35,7 @@ class ActuatorService(Node):
 
         ''' Subscribers '''
         self.create_subscription(
-            Bool,
+            MotionCompleteResponse,
             'is_motion_complete',
             self.motion_complete_callback,
             10)
@@ -63,7 +64,7 @@ class ActuatorService(Node):
         self.get_logger().info("Pince Service has been started.")
 
     def motion_complete_callback(self, msg):
-        if msg.data:
+        if msg.success and msg.service_requester == str(self.__class__.__name__):
             self.get_logger().info(f"\033[38;5;208m[motion_complete_callback] Received in ActuatorService: {msg.data}\033[0m")
 
     def elevator_callback(self, request, response):
@@ -156,7 +157,7 @@ class ActuatorService(Node):
                 self.open_pince()
                 time.sleep(0.5)
                 self.cmd_forward(300)
-                time.sleep(1.5)
+                time.sleep(5) # This value MUST be superior than forward otherwise it fuck up everything => FIX IT ASAP
                 self.close_pince()
 
             elif request.param == "loop":                
@@ -238,17 +239,18 @@ class ActuatorService(Node):
         service_name = "cmd_forward_service"
 
         self.get_logger().info(f"[Exec Action] forward of: {distance_mm}mm")
-        client = self.create_client(IntBool, service_name)
+        client = self.create_client(CmdForwardService, service_name)
         while not client.wait_for_service(1):
             self.get_logger().warn(f"Waiting for Server {service_name} to be available...")
 
-        request = IntBool.Request()
+        request = CmdForwardService.Request()
+        request.service_requester = self.__class__.__name__
         request.distance_mm = int(distance_mm)
-
         client.call_async(request)
+
         self.get_logger().info(f"[Publish] {request} to {service_name}")
 
-    ''' EndMotion Funcitons '''          
+    ''' EndMotion Functions '''          
     
     def loadActuatorConfig(self):
         with open('/home/edog/ros2_ws/src/control_package/resource/actuatorConfig.json') as file:
