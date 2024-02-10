@@ -8,7 +8,7 @@ import RPi.GPIO as GPIO
 from robot_interfaces.srv import IntBool
 from std_msgs.msg import Bool
 from robot_interfaces.srv import CmdActuatorService
-
+from threading import Thread, Event
 
 # Servo
 from adafruit_servokit import ServoKit
@@ -24,7 +24,6 @@ class ActuatorService(Node):
     EN_pin = 24  # enable pin (LOW to enable)
 
     # Node State
-    motion_complete = False
     actuator_config = None
     elevator_position = 0
 
@@ -33,6 +32,7 @@ class ActuatorService(Node):
         self.actuator_config = self.loadActuatorConfig()
         self.kit = ServoKit(channels=16)
         self.initStepper()
+        self.motion_complete_event = Event()
 
         ''' Subscribers '''
         self.create_subscription(
@@ -69,6 +69,7 @@ class ActuatorService(Node):
             self.get_logger().info(
                 "\033[38;5;208m[motion_complete_callback]\033[0m")
             self.get_logger().info('Motion completed received: %r' % msg.data)
+            self.motion_complete_event.set()
 
     def elevator_callback(self, request, response):
         try:
@@ -161,9 +162,10 @@ class ActuatorService(Node):
                 time.sleep(0.5)
                 self.cmd_forward(1000)
 
+                # Wait for the motion_complete_event to be set in motion_complete_callback
+                self.get_logger().info("Waiting for motion to complete...")
+          
 
-                self.get_logger().info(
-                "\033[38;5;208mself.wait_for_motion_complete() done :)\033[0m")
                 self.close_pince()
 
             elif request.param == "loop":                
