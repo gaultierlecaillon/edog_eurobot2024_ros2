@@ -3,7 +3,7 @@
     "name": "homologation.json",
     "description": "Strat that move forward, grab plants and drop them",
     "color": "green",
-    "startingPos": "500,500,0",
+    "startingPos": "0,0,0",
     "strategy": [
         {
             "label": "Starting Blocks",
@@ -13,8 +13,8 @@
         },
         {
             "label": "Opening",
-            "actions": [   
-                {"graber": ""}
+            "actions": [
+                {"goto": "300,300,0"}
             ]
         }
     ]

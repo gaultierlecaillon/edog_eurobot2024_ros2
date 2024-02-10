@@ -73,13 +73,13 @@ class IANode(Node):
 
     def is_motion_complete_callback(self, msg):
         action_name = next(iter(self.actions_dict[0]['action']))
+        self.get_logger().info(f"\033[38;5;208m[motion_complete_callback] Received in IAService: {msg.data} for {action_name}\033[0m")
+
         if msg.data:
             if action_name == 'graber':
                 pass
-        else:                
-            self.update_current_action_status('done')
-
-
+            else:
+                self.update_current_action_status('done')
 
     def waiting_tirette(self, param):
         self.subscriber_ = self.create_subscription(
@@ -177,35 +177,6 @@ class IANode(Node):
 
         self.get_logger().info(f"[Publish] {request} to {service_name}")
 
-    def unstack(self, param):
-        service_name = "cmd_arm_unstack_service"  # TODO unstack and drop and grab soulg be the same service
-        self.get_logger().info(f"Performing 'unstack' action with param: {param}")
-        client = self.create_client(NullBool, service_name)
-        while not client.wait_for_service(1):
-            self.get_logger().warn(f"Waiting for Server {service_name} to be available...")
-
-        request = NullBool.Request()
-        client.call_async(request)
-
-        self.get_logger().info(f"[Publish] {request} to {service_name}")
-
-    def drop(self, param):
-        service_name = "cmd_arm_drop_service"
-
-        self.get_logger().info(f"Performing 'drop' action with param: {param}")
-
-        client = self.create_client(NullBool, service_name)
-        while not client.wait_for_service(1):
-            self.get_logger().warn(f"Waiting for Server {service_name} to be available...")
-
-        request = NullBool.Request()
-        future = client.call_async(request)
-
-        future.add_done_callback(
-            partial(self.callback_current_action))
-
-        self.get_logger().info(f"[Publish] {request} to cmd_arm_drop_service")
-
     def forward(self, param):
         service_name = "cmd_forward_service"
 
@@ -261,7 +232,14 @@ class IANode(Node):
             response = future.result()
             self.get_logger().warn(f"[callback_goto]: {response.cmd}")            
 
-            #self.actions_dict.pop(0)
+            self.get_logger().info(f"[transform_goto_in_cmd pop!] {self.actions_dict}")
+            self.actions_dict.pop(0) #remove goto action and replace by rotate -> forward -> rotate
+            self.get_logger().info(f"[transform_goto_in_cmd after pop] {self.actions_dict}")
+            
+            
+            self.get_logger().info(f"\033[95m[response.cmd] {response.cmd}\033[0m")
+
+            
             if response.cmd.final_rotation != 0:
                 self.actions_dict.insert(0, {
                     'action': {'rotate': response.cmd.final_rotation},
