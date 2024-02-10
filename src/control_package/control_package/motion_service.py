@@ -316,7 +316,7 @@ class MotionService(Node):
             # Check if both axes have reached their target positions within the tolerance range
             elif pos_error_0 <= self.cpr_error_tolerance and pos_error_1 <= self.cpr_error_tolerance:
                 self.get_logger().info(
-                    f"\033[38;5;46mMotion completed in {time.time() - self.current_motion['start']:.3f} seconds (pos_error_0:{pos_error_0}, pos_error_1:{pos_error_1}\n\033[0m")
+                    f"\033[38;5;46mMotion completed in {time.time() - self.current_motion['start']:.3f} seconds (pos_error_0:{pos_error_0}, pos_error_1:{pos_error_1}\033[0m")
                 motion_completed = True
 
             elif time.time() - self.current_motion['start'] > timeout:

@@ -13,9 +13,8 @@
         },
         {
             "label": "Opening",
-            "actions": [                
-                {"forward": "100"},
-                {"forward": "-100"}
+            "actions": [   
+                {"graber": ""}
             ]
         }
     ]

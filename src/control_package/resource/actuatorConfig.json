@@ -6,7 +6,7 @@
       "extend": 100
     },
     "motor1": {
-      "close": 167,
+      "close": 165,
       "open": 88,
       "extend": 66
     }

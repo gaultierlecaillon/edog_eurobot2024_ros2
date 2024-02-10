@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 import json
 import rclpy
-import math
 from rclpy.node import Node
 from functools import partial
 from std_msgs.msg import Bool
 from robot_interfaces.srv import PositionBool
 from robot_interfaces.srv import CmdPositionService
 from robot_interfaces.srv import CmdActuatorService
-from robot_interfaces.srv import BoolBool
 from robot_interfaces.srv import IntBool
 from robot_interfaces.srv import NullBool
 from robot_interfaces.srv import FloatBool
@@ -18,8 +16,6 @@ class IANode(Node):
     action_name = None
     action_param = None
     current_action_already_printed = False
-
-    unstack_num_action = 0
 
     def __init__(self):
         super().__init__('ia_node')
@@ -76,11 +72,12 @@ class IANode(Node):
             rclpy.shutdown()
 
     def is_motion_complete_callback(self, msg):
-        if msg.data:                
+        action_name = next(iter(self.actions_dict[0]['action']))
+        if msg.data:
+            if action_name == 'graber':
+                pass
+        else:                
             self.update_current_action_status('done')
-            self.get_logger().info("ACTION DONE !")
-        else:
-            self.get_logger().info("ACTION NOT DONE ! :(")
 
 
 

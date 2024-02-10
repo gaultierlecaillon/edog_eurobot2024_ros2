@@ -3,13 +3,10 @@ import time
 import json
 import rclpy
 from rclpy.node import Node
-from robot_interfaces.srv import CmdPositionService
+from functools import partial
 import RPi.GPIO as GPIO
 from robot_interfaces.srv import IntBool
-from functools import partial
 from std_msgs.msg import Bool
-from robot_interfaces.srv import NullBool
-from robot_interfaces.srv import FloatBool
 from robot_interfaces.srv import CmdActuatorService
 
 
@@ -36,7 +33,15 @@ class ActuatorService(Node):
         self.actuator_config = self.loadActuatorConfig()
         self.kit = ServoKit(channels=16)
         self.initStepper()
+
+        ''' Subscribers '''
+        self.create_subscription(
+            Bool,
+            'is_motion_complete',
+            self.motion_complete_callback,
+            10)
         
+        ''' Services '''
         self.create_service(
             CmdActuatorService,
             "cmd_pince_service",
@@ -58,6 +63,12 @@ class ActuatorService(Node):
             self.graber_callback)
 
         self.get_logger().info("Pince Service has been started.")
+
+    def motion_complete_callback(self, msg):
+        if msg.data:
+            self.get_logger().info(
+                "\033[38;5;208m[motion_complete_callback]\033[0m")
+            self.get_logger().info('Motion completed received: %r' % msg.data)
 
     def elevator_callback(self, request, response):
         try:
@@ -136,14 +147,24 @@ class ActuatorService(Node):
             response.success = False
         return response
 
-    async def graber_callback(self, request, response):
+    def graber_callback(self, request, response):
         try:
-            self.get_logger().info(f"graber_callback Called : {request}")
+            self.close_pince()
+            self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['close']
+            self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']    
+            time.sleep(1)        
+            self.get_logger().info(f"graber_callback Called : param={request.param}")
+
             if request.param == "":
-                self.up_elevator()
+                
                 self.open_pince()
                 time.sleep(0.5)
-                await self.cmd_forward(100)
+                self.cmd_forward(1000)
+
+
+                self.get_logger().info(
+                "\033[38;5;208mself.wait_for_motion_complete() done :)\033[0m")
+                self.close_pince()
 
             elif request.param == "loop":                
                 self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['close']
@@ -174,6 +195,8 @@ class ActuatorService(Node):
 
     
     def close_pince(self):
+        self.get_logger().info(f"CLOOOOOOOOOOOOOOOOOSED")
+
         self.kit.servo[0].angle = self.actuator_config['pince']['motor0']['close']
         self.kit.servo[1].angle = self.actuator_config['pince']['motor1']['close']
             
