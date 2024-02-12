@@ -14,9 +14,9 @@
         {
             "label": "Opening",
             "actions": [
-                {"goto": "100,100,0"},
                 {"graber": ""},
-                {"goto": "0,0,0"}
+                {"graber": ""},
+                {"graber": ""}
             ]
         }
     ]

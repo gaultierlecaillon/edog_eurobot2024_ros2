@@ -3,18 +3,20 @@
     "motor0": {
       "close": 0,
       "open": 80,
-      "extend": 100
+      "extend": 100,
+      "tight": 50
     },
     "motor1": {
       "close": 165,
       "open": 88,
-      "extend": 66
+      "extend": 68,
+      "tight": 118
     }
   },
   "graber": {
     "motor2": {
       "close": 0,
-      "open": 90
+      "open": 95
     },
     "motor3": {
       "close": 180,
@@ -31,5 +33,10 @@
       "yellow": 115,
       "purple": 50
     }    
+  },
+  "elevator": {
+      "up": 375,
+      "down": 0,
+      "plant": 0
   }
 }

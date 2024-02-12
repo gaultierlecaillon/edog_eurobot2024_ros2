@@ -97,6 +97,8 @@ class MotionService(Node):
         self.get_logger().info(f"[Loading Calibration Config] caibration.json")
 
         self.calibration_config = config['calibration']
+        self.calibration_config["rotation"]["coef"] = self.calibration_config["rotation"]["mm"] / self.calibration_config["rotation"]["deg"]
+        self.calibration_config["linear"]["coef"] = self.calibration_config["linear"]["pos"] / self.calibration_config["linear"]["mm"]
         print("self.calibration_config", self.calibration_config)
 
     def calibration_callback(self, request, response):
@@ -141,7 +143,6 @@ class MotionService(Node):
 
     def emergency_stop_callback(self, msg):
         if self.current_motion['in_motion']:
-
             if self.current_motion['type'] == "forward":
                 pos = Position()
                 x_mm = (self.odrv0.axis0.encoder.pos_estimate - self.pos_estimate_0) / \
@@ -243,8 +244,8 @@ class MotionService(Node):
     def motionRotate(self, target_angle):
         try:
             rotation_to_do = self.r_ + target_angle
-            increment_mm = target_angle * float(self.calibration_config["rotation"]["coef"])
-            increment_pos = float(self.calibration_config["linear"]["coef"]) * increment_mm
+            increment_mm = target_angle * self.calibration_config["rotation"]["coef"]
+            increment_pos = increment_mm * self.calibration_config["linear"]["coef"]
 
             self.get_logger().warn(f"[MotionRotate] target_angle={target_angle}°, rotation_to_do={rotation_to_do}°")
 

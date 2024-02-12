@@ -1,0 +1,15 @@
+{
+    "type": "led",
+    "name": "led.json",
+    "description": "led",
+    "color": "multicolorrr",
+    "startingPos": "0,0,0",
+    "strategy": [
+        {
+            "label": "Opening",
+            "actions": [
+                {"led": ""}
+            ]
+        }
+    ]
+}
