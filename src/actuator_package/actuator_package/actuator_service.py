@@ -9,6 +9,7 @@ from std_msgs.msg import Bool
 from robot_interfaces.srv import CmdActuatorService
 from robot_interfaces.srv import CmdForwardService
 from robot_interfaces.msg import MotionCompleteResponse
+from example_interfaces.msg import String
 
 # Servo
 from adafruit_servokit import ServoKit
@@ -39,6 +40,9 @@ class ActuatorService(Node):
             'is_motion_complete',
             self.motion_complete_callback,
             10)
+        
+        ''' Publisher '''
+        self.voice_publisher_ = self.create_publisher(String, "voice_topic", 10)
         
         ''' Services '''
         self.create_service(
@@ -152,7 +156,11 @@ class ActuatorService(Node):
             time.sleep(1)        
             self.get_logger().info(f"graber_callback Called : param={request.param}")
 
-            if request.param == "":                
+            if request.param == "voice":
+                self.speak("Alert_TerranNukeReady.mp3")
+                time.sleep(3)
+
+            elif request.param == "":                
                 self.extend_pince()
                 time.sleep(0.5)
                 self.up_elevator()
@@ -160,29 +168,36 @@ class ActuatorService(Node):
                 time.sleep(1) # This value MUST be superior than forward otherwise it fuck up everything => FIX IT ASAP
                 self.open_pince()
                 time.sleep(1)
-                self.cmd_forward(100)
-                time.sleep(0.25)                
+                self.cmd_forward(130)
+                time.sleep(0.1 )                
                 self.tight_pince()
                 time.sleep(1)
                 self.open_pince()
                 self.cmd_forward(-200)
                 time.sleep(1)
-                self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['open']
                 self.close_pince()
                 self.cmd_forward(120)
-                time.sleep(2)
+                time.sleep(1.5)
+                self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['open']
+                time.sleep(0.25) 
 
                 self.plant_elevator()
-                time.sleep(2)
+                time.sleep(1.5)
+                self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['close']
+                time.sleep(0.2)
+                self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']
                 self.cmd_forward(-20)
                 time.sleep(0.1)
                 self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['close']
-                time.sleep(2)
+                time.sleep(1.5)
                 self.up_elevator()
                 time.sleep(1)
-                self.cmd_forward(-300)
+                self.cmd_forward(-400)
                 time.sleep(4)
                 self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']
+                time.sleep(2)
+                self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['close']
+                self.down_elevator()
 
 
             elif request.param == "up":
@@ -301,6 +316,12 @@ class ActuatorService(Node):
         client.call_async(request)
 
         self.get_logger().info(f"[Publish] {request} to {service_name}")
+
+    def speak(self, action):
+        msg = String()
+        msg.data = str(action)
+        self.voice_publisher_.publish(msg)
+        self.get_logger().info(f"[Publish topic] voice_topic msg:{msg}")
 
     ''' EndMotion Functions '''          
     

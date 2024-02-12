@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'ia_node = ia_package.ia_node:main'
+            'ia_node = ia_package.ia_node:main',
+            'voice_service = ia_package.voice_service:main'
         ],
     },
 )

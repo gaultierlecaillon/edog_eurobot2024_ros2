@@ -16,11 +16,11 @@
   "graber": {
     "motor2": {
       "close": 0,
-      "open": 95
+      "open": 93
     },
     "motor3": {
       "close": 180,
-      "open": 88
+      "open": 80
     }
   },
   "solarpanel": {

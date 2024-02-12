@@ -45,11 +45,18 @@ def generate_launch_description():
         parameters=[{"strategy_filename": strategy_filename}]
     )
 
+    voice = Node(
+        package="ia_package",
+        executable="voice_service",
+        name="voice_service"
+    )
+
     ld.add_action(tirette_publisher)
     ld.add_action(led_service)
     ld.add_action(lidar_publisher)
     ld.add_action(motion_service)
     ld.add_action(actuator_service)
     ld.add_action(ia)
+    ld.add_action(voice)
 
     return ld

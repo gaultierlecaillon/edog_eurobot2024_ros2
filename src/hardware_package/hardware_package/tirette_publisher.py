@@ -27,6 +27,7 @@ class TirettePublisher(Node):
         # end
         self.get_logger().info("Node tirette_publisher started")
 
+    #Todo, if msg.data == True the shutdown the node
     def publish_state(self):
         msg = Bool()
         tirette_state = not GPIO.input(self.tiretteGPIO)

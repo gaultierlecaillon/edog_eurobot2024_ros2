@@ -6,17 +6,9 @@
     "startingPos": "0,0,0",
     "strategy": [
         {
-            "label": "Starting Blocks",
-            "actions": [
-                { "calibrate": "True" }
-            ]
-        },
-        {
             "label": "Opening",
             "actions": [
-                {"graber": ""},
-                {"graber": ""},
-                {"graber": ""}
+                {"graber": "voice"}
             ]
         }
     ]

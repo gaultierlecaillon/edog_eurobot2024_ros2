@@ -24,6 +24,7 @@ set(msg_files
   "msg/Position.msg"
   "msg/CmdPositionResult.msg"
   "msg/MotionCompleteResponse.msg"
+  "msg/StringArray.msg"
 )
 
 set(srv_files
