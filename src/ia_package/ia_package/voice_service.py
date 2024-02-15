@@ -3,7 +3,7 @@ import rclpy
 import time
 from rclpy.node import Node
 from example_interfaces.msg import String
-import pygame
+from playsound import playsound
 
 class VoiceService(Node):   
 
@@ -21,38 +21,19 @@ class VoiceService(Node):
         self.get_logger().info('VoiceService node has started')
 
 
-    def play_mp3(self, file_path, timeout=30):
+    def play_mp3(self, file_path):
         try:
-            # Initialize the pygame mixer
-            pygame.mixer.init()
-            
-            # Load the MP3 file
-            pygame.mixer.music.load(file_path)
-            
-            # Play the MP3 file
-            pygame.mixer.music.play()
-            
-            # Setup for timeout
-            start_time = time.time()
-            
-            # Wait for the music to play with a timeout
-            while pygame.mixer.music.get_busy():
-                time.sleep(1)
-                if (time.time() - start_time) > timeout:
-                    self.get_logger().info(f"\033[91mError: Music play timeout exceeded.\033[0m")  # Error message in red
-                    break
-            
+            playsound(file_path)
         except Exception as e:
             # Print the error message in red
-            self.get_logger().info(f"\033[91mError occurred: {e}\033[0m")
+            self.get_logger().info(f"\033[91mError occurred while playing song '{file_path}': {e}\033[0m")
             
 
 
 
     def voice_callback(self, msg):
         self.get_logger().info(f"\033[94m[VOICE] Received: {msg.data}\033[0m")
-        mp3_file = '/home/edog/Robot/Bluetooth/soundtrack/' + str(msg.data)
-    
+        mp3_file = '/home/edog/Robot/Bluetooth/soundtrack/' + str(msg.data)    
         self.play_mp3(mp3_file)
 
 

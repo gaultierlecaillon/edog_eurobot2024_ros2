@@ -42,7 +42,8 @@ class ActuatorService(Node):
             10)
         
         ''' Publisher '''
-        self.voice_publisher_ = self.create_publisher(String, "voice_topic", 10)
+        if not hasattr(node, 'voice_publisher'):
+            self.voice_publisher = node.create_publisher(String, "voice_topic", 10)
         
         ''' Services '''
         self.create_service(
@@ -157,8 +158,9 @@ class ActuatorService(Node):
             self.get_logger().info(f"graber_callback Called : param={request.param}")
 
             if request.param == "voice":
-                self.speak("Alert_TerranNukeReady.mp3")
-                time.sleep(3)
+                self.get_logger().info(f"SCV_Ready00.mp3 - 1")
+                self.speak("SCV_Ready00.mp3")
+                self.get_logger().info(f"SCV_Ready00.mp3 - 2")
 
             elif request.param == "":                
                 self.extend_pince()
