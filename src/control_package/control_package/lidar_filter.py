@@ -34,7 +34,11 @@ class LidarFilter(Node):
         self.filter_scan_publisher_ = self.create_publisher(LaserScan, "filter_scan_topic", 10)
         self.emergency_stop_publisher_ = self.create_publisher(Bool, "emergency_stop_topic", 10)
 
-        # Subscriber
+        ''' Publisher '''
+        if not hasattr(self, 'voice_publisher'):
+            self.voice_publisher = self.create_publisher(String, "voice_topic", 10)
+
+        ''' Subscribers '''
         self.create_subscription(
             Position,
             "robot_position",
@@ -136,11 +140,10 @@ class LidarFilter(Node):
                         and 200 < y_obstacle < 1800:
                     # self.get_logger().info(f"x {round(x,4)}, y={round(y,4)}")
                     emergency_stop_msg.data = True
-                    self.emergency_stop_publisher_.publish(emergency_stop_msg)
+                    self.emergency_stop_publisher_.publish(emergency_stop_msg)                    
                     return
 
         self.emergency_stop_publisher_.publish(emergency_stop_msg)
-
 
 def main(args=None):
     rclpy.init(args=args)

@@ -26,12 +26,13 @@
   "solarpanel": {
     "motor4": {
       "open": 175,
+      "low": 165,
       "close": 108
     },
     "motor5": {
       "default": 85,
-      "yellow": 115,
-      "purple": 50
+      "yellow": 50,
+      "blue": 115
     }    
   },
   "elevator": {

@@ -33,6 +33,7 @@ class ActuatorService(Node):
         self.actuator_config = self.loadActuatorConfig()
         self.kit = ServoKit(channels=16)
         self.initStepper()
+        self.initServo()
 
         ''' Subscribers '''
         self.create_subscription(
@@ -42,8 +43,8 @@ class ActuatorService(Node):
             10)
         
         ''' Publisher '''
-        if not hasattr(node, 'voice_publisher'):
-            self.voice_publisher = node.create_publisher(String, "voice_topic", 10)
+        if not hasattr(self, 'voice_publisher'):
+            self.voice_publisher = self.create_publisher(String, "voice_topic", 10)
         
         ''' Services '''
         self.create_service(
@@ -95,26 +96,25 @@ class ActuatorService(Node):
     def solarpanel_callback(self, request, response):
         try:
             self.get_logger().info(f"solarpanel_callback Called : {request}")
-            timesleep = 1
-            for i in range(1):
-                self.get_logger().info("Open")
+            if request.param == "yellow" or request.param == "blue":
+                offset = 0
                 self.kit.servo[4].angle = self.actuator_config['solarpanel']['motor4']['open']
                 self.kit.servo[5].angle = self.actuator_config['solarpanel']['motor5']['default']
-                time.sleep(timesleep)
-
-                self.get_logger().info("Right")
-                self.kit.servo[5].angle = self.actuator_config['solarpanel']['motor5']['yellow']
-                time.sleep(timesleep)
-
-                self.get_logger().info("Right")
-                self.kit.servo[5].angle = self.actuator_config['solarpanel']['motor5']['purple']
-                time.sleep(timesleep)
-
-                self.get_logger().info("Close")
-                self.kit.servo[5].angle = self.actuator_config['solarpanel']['motor5']['default']
+                time.sleep(0.3)
+                if request.param == "yellow":
+                    self.kit.servo[5].angle = self.actuator_config['solarpanel']['motor5']['yellow']
+                    offset = 10
+                else:
+                    self.kit.servo[5].angle = self.actuator_config['solarpanel']['motor5']['blue']
+                    offset = -15
                 time.sleep(0.2)
-                self.kit.servo[4].angle = self.actuator_config['solarpanel']['motor4']['close']
-                time.sleep(timesleep)
+                self.kit.servo[4].angle = self.actuator_config['solarpanel']['motor4']['low']
+                time.sleep(0.2)
+                self.kit.servo[5].angle = self.actuator_config['solarpanel']['motor5']['default'] + offset
+                time.sleep(0.1)
+                self.initServo()
+            else:
+                self.get_logger().info(f"unknown action: request.param: {request.param}")
 
             response.success = True
         except Exception as e:
@@ -157,12 +157,7 @@ class ActuatorService(Node):
             time.sleep(1)        
             self.get_logger().info(f"graber_callback Called : param={request.param}")
 
-            if request.param == "voice":
-                self.get_logger().info(f"SCV_Ready00.mp3 - 1")
-                self.speak("SCV_Ready00.mp3")
-                self.get_logger().info(f"SCV_Ready00.mp3 - 2")
-
-            elif request.param == "":                
+            if request.param == "":                
                 self.extend_pince()
                 time.sleep(0.5)
                 self.up_elevator()
@@ -322,7 +317,7 @@ class ActuatorService(Node):
     def speak(self, action):
         msg = String()
         msg.data = str(action)
-        self.voice_publisher_.publish(msg)
+        self.voice_publisher.publish(msg)
         self.get_logger().info(f"[Publish topic] voice_topic msg:{msg}")
 
     ''' EndMotion Functions '''          
@@ -340,6 +335,13 @@ class ActuatorService(Node):
         GPIO.setup(self.EN_pin, GPIO.OUT)  # set enable pin as output
         GPIO.output(self.EN_pin, GPIO.HIGH)
         time.sleep(0.5)
+
+    def initServo(self):
+        self.kit.servo[4].angle = self.actuator_config['solarpanel']['motor4']['close']
+        self.kit.servo[5].angle = self.actuator_config['solarpanel']['motor5']['default']
+        time.sleep(1)
+        self.kit.servo[4].angle = None
+        self.kit.servo[5].angle = None
 
 def main(args=None):
     rclpy.init(args=args)

@@ -13,6 +13,7 @@ from robot_interfaces.srv import PositionBool
 from robot_interfaces.srv import CmdRotateService
 from robot_interfaces.msg import MotionCompleteResponse
 from std_msgs.msg import Bool
+from example_interfaces.msg import String
 
 # odrive
 import odrive
@@ -53,6 +54,11 @@ class MotionService(Node):
         self.odrv0 = None
         self.loadCalibrationConfig()
 
+        ''' Publisher '''
+        if not hasattr(self, 'voice_publisher'):
+            self.voice_publisher = self.create_publisher(String, "voice_topic", 10)
+
+        ''' Services '''
         self.calibration_service_ = self.create_service(
             PositionBool,
             "cmd_calibration_service",
@@ -164,10 +170,11 @@ class MotionService(Node):
                 self.setPIDGains("emergency_stop.json")
                 self.odrv0.axis0.controller.input_pos = self.odrv0.axis0.encoder.pos_estimate
                 self.odrv0.axis1.controller.input_pos = self.odrv0.axis1.encoder.pos_estimate
-                #self.get_logger().error(f"Obstacle in front of the robot. Stopped @ input_pos_0={self.odrv0.axis0.encoder.pos_estimate} and input_pos_1={self.odrv0.axis1.encoder.pos_estimate} ")
+                self.get_logger().error(f"\033[91mObstacle in front of the robot. Stopped @ input_pos_0={self.odrv0.axis0.encoder.pos_estimate} and input_pos_1={self.odrv0.axis1.encoder.pos_estimate}\033[0m")
                 self.current_motion['emergency'] = True
                 self.current_motion['in_motion'] = False
-                time.sleep(2)
+                self.speak("emergency_stop.mp3")
+                time.sleep(1)
                 self.setPID("odrive_config.json")
                 self.setPIDGains("odrive_config.json")
 
@@ -445,6 +452,12 @@ class MotionService(Node):
         self.get_logger().info("\033[91mShutting down node due to ODrive connection failure. 💥\033[0m")
         # Perform any necessary cleanup here
         os.kill(os.getpid(), signal.SIGINT)  # Send SIGINT to the current process This method uses os.kill to send a SIGINT (interrupt signal) to the current 
+
+    def speak(self, action):
+        msg = String()
+        msg.data = str(action)
+        self.voice_publisher.publish(msg)
+        self.get_logger().info(f"[Publish topic] voice_topic msg:{msg}")
 
 def main(args=None):
     rclpy.init(args=args)

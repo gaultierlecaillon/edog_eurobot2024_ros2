@@ -8,9 +8,9 @@ from robot_interfaces.srv import PositionBool
 from robot_interfaces.srv import CmdPositionService
 from robot_interfaces.srv import CmdActuatorService
 from robot_interfaces.srv import CmdForwardService
-from robot_interfaces.srv import NullBool
 from robot_interfaces.srv import CmdRotateService
 from robot_interfaces.msg import MotionCompleteResponse
+from example_interfaces.msg import String
 
 
 class IANode(Node):
@@ -31,6 +31,11 @@ class IANode(Node):
 
         self.number_timer_ = self.create_timer(0.1, self.master_callback)
 
+        ''' Publisher '''
+        if not hasattr(self, 'voice_publisher'):
+            self.voice_publisher = self.create_publisher(String, "voice_topic", 10)
+
+        ''' Subscribers '''
         self.create_subscription(
             MotionCompleteResponse,
             "is_motion_complete",
@@ -298,6 +303,7 @@ class IANode(Node):
             self.actions_dict.pop(0)
             self.get_logger().info(
                 f"[NEXT ACTION(S)] {self.actions_dict}")
+            self.speak("task_complet_sound.mp3")
         else: # on going
             self.actions_dict[0]['status'] = status
         self.current_action_already_printed = False
@@ -327,6 +333,11 @@ class IANode(Node):
             self.get_logger().error('\033[91m' + "Error loading strategy: " + str(e) + '\033[0m')
 
 
+    def speak(self, action):
+        msg = String()
+        msg.data = str(action)
+        self.voice_publisher.publish(msg)
+        self.get_logger().info(f"[Publish topic] voice_topic msg:{msg}")
 
 def cast_str_bool(var):
     return var == 'True'
