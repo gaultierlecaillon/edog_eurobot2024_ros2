@@ -18,6 +18,9 @@ class IANode(Node):
     action_param = None
     current_action_already_printed = False
 
+    # Declare Timer (Default 100 secondes)
+    shutdown_after_seconds = 10 # todo change to 100
+
     def __init__(self):
         super().__init__('ia_node')
 
@@ -29,6 +32,10 @@ class IANode(Node):
         self.actions_dict = []
         self.load_strategy()
 
+        # Match timer
+        self.match_timer = self.create_timer(self.shutdown_after_seconds, self.shutdown_nodes)
+
+        # ROS2 Node time
         self.number_timer_ = self.create_timer(0.1, self.master_callback)
 
         ''' Publisher '''
@@ -42,7 +49,7 @@ class IANode(Node):
             self.is_motion_complete_callback,
             10)
 
-        self.get_logger().info("\033[38;5;208mIA Node is running!\n\n\t\t\t (⌐■_■) 𝘴𝘶𝘱 𝘣𝘳𝘢 ?\033[0m\n")
+        self.get_logger().info("\033[38;5;208mIA Node is running!\n\n\t\t\t (⌐■_■) 𝘴𝘶𝘱 𝘣𝘳𝘢 ?\n\033[0m\n")
 
     def master_callback(self):
         self.execute_current_action()
@@ -314,12 +321,15 @@ class IANode(Node):
             with open('/home/edog/ros2_ws/src/ia_package/resource/' + self.strategy_filename + '.json') as file:
                 self.config = json.load(file)
 
+            if self.config['timer']:
+                self.shutdown_after_seconds = int(self.config['timer'])
+
             # Logging the loaded strategy information
-            self.get_logger().info(f"[Loading Strategy] {self.config['name']} ({self.config['description']})")
+            self.get_logger().info(f"\033[95m[Loading Strategy] {self.config['name']} ({self.config['description']}) during {self.shutdown_after_seconds} secondes !\033[0m")
             self.get_logger().info(f"[Start] Color: {self.config['color']} | StartPos:({self.config['startingPos']})")
 
             # Processing the strategy actions
-            self.actions_dict = []  # Assuming you want to reset or initialize it here
+            self.actions_dict = []  
             for strat in self.config['strategy']:
                 for action in strat['actions']:
                     self.actions_dict.append(
@@ -338,6 +348,16 @@ class IANode(Node):
         msg.data = str(action)
         self.voice_publisher.publish(msg)
         self.get_logger().info(f"[Publish topic] voice_topic msg:{msg}")
+
+    '''
+    Shutdown the node at the end of the Match (default 100s)
+    '''
+    def shutdown_nodes(self):
+        self.get_logger().info(f"\033[38;5;208m[Match done] Time Out ! {self.config['timer']} secondes\n\n\t\t\t (⌐■_■) 𝘪𝘴 𝘪𝘵 𝘗1 ?\n\033[0m\n")
+        # Perform any necessary cleanup here
+        self.match_timer.cancel()
+        rclpy.shutdown()
+
 
 def cast_str_bool(var):
     return var == 'True'

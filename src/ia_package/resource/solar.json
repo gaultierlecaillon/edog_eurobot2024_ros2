@@ -4,6 +4,7 @@
     "description": "",
     "color": "",
     "startingPos": "0,0,0",
+    "timer": "3",
     "strategy": [
           {
             "name": "Opening",
