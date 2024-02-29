@@ -34,8 +34,7 @@ class ActuatorService(Node):
     def __init__(self):
         super().__init__("actuator_service")
 
-        self.pid_publisher = self.create_publisher(Int32, 'killable_nodes_pid', 10)
-        self.publish_pid()
+        self.pid_publisher = self.create_publisher(Int32, 'killable_nodes_pid', 10)        
 
         self.actuator_config = self.loadActuatorConfig()
         self.kit = ServoKit(channels=16)
@@ -81,6 +80,7 @@ class ActuatorService(Node):
             "cmd_graber_service",
             self.graber_callback)
 
+        self.publish_pid()
         self.get_logger().info("Pince Service has been started.")
 
     def publish_pid(self):

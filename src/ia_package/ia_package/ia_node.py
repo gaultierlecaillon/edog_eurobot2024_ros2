@@ -32,7 +32,6 @@ class IANode(Node):
 
     def __init__(self):
         super().__init__('ia_node')
-
         self.kit = ServoKit(channels=16)        
 
         # Declare and get the strategy_filename parameter
@@ -59,6 +58,12 @@ class IANode(Node):
             Int32,
             'killable_nodes_pid',
             self.kill_callback,
+            10) 
+
+        self.create_subscription(
+            Bool,
+            'bau_topic',
+            self.bau_callback,
             10)        
 
         self.create_subscription(
@@ -382,6 +387,9 @@ class IANode(Node):
     Shutdown the node at the end of the Match
     '''
 
+    def bau_callback(self, msg):
+        self.shutdown_nodes()
+
     def kill_callback(self, msg):
         self.pids.append(msg.data)
         self.get_logger().error(f'\033[91mReceived PIDs: {self.pids}\033[0m')        
@@ -412,7 +420,7 @@ class IANode(Node):
         #todo add stepper
 
     def shutdown_nodes(self):
-        self.get_logger().info(f"\033[38;5;208m[Match done] Time Out ! {self.config['timer']} secondes\n\n\t\t\t (⌐■_■) 𝘪𝘴 𝘪𝘵 𝘗1 ?\n\033[0m\n")
+        self.get_logger().info(f"\033[38;5;208m[SHUTDOW NODE] Adios\n\n\t\t\t (⌐■_■) 𝘪𝘴 𝘪𝘵 𝘗1 ?\n\033[0m\n")
         self.kill_all()
         self.match_timer.cancel()        
         self.actions_dict.clear()

@@ -3,7 +3,9 @@ import os
 import time
 import json
 import rclpy
+import signal
 from rclpy.node import Node
+from std_msgs.msg import Bool
 from robot_interfaces.msg import Position
 from robot_interfaces.msg import CmdPositionResult
 from robot_interfaces.srv import CmdPositionService
@@ -58,6 +60,9 @@ class MotionService(Node):
         if not hasattr(self, 'voice_publisher'):
             self.voice_publisher = self.create_publisher(String, "voice_topic", 10)
 
+        # Add a publisher for emergency_stop
+        self.bau_publisher = self.create_publisher(Bool, "bau_topic", 10)
+
         ''' Services '''
         self.calibration_service_ = self.create_service(
             PositionBool,
@@ -97,6 +102,33 @@ class MotionService(Node):
 
         self.get_logger().info("Motion Service has been started.")
 
+    def check_odrive_connection(self):
+        try:
+            start_time = time.time()
+            odrv_tmp = odrive.find_any(timeout=0.1)
+            end_time = time.time()
+            duration = (end_time - start_time)
+            self.get_logger().info(f"The execution took {duration} s")
+
+            if odrv_tmp is None:
+                self.get_logger().info("ODrive connection lost.")
+                # Publish a message on 'bau_topic' if connection is lost
+                msg = Bool()
+                msg.data = True
+                self.bau_publisher.publish(msg)
+            else:
+                self.get_logger().info("ODrive connected :)")
+        except Exception as e:
+            self.get_logger().info(f"An error occurred while trying to connect to ODrive: {e}")
+            # It might be wise to publish the lost connection message here as well,
+            # since an exception here likely indicates communication issues.
+            msg = Bool()
+            msg.data = True
+            self.bau_publisher.publish(msg)
+            self.shutdown_node()
+
+
+    
     def loadCalibrationConfig(self):
         with open('/home/edog/ros2_ws/src/control_package/resource/calibration.json') as file:
             config = json.load(file)
@@ -143,6 +175,7 @@ class MotionService(Node):
         self.pos_estimate_0 = 0
         self.pos_estimate_1 = 0
 
+        self.connection_check_timer = self.create_timer(1, self.check_odrive_connection)
         response.success = True
         time.sleep(0.2)
         return response
@@ -261,7 +294,7 @@ class MotionService(Node):
             self.odrv0.axis0.controller.move_incremental(increment_pos, False)
             self.odrv0.axis1.controller.move_incremental(-increment_pos, False)
         except AttributeError:
-            self.get_logger().error("NoOdrive Initiated")
+            self.get_logger().error("\033[91m[🚨 motionRotate] Something went wrong with Odrive 🚨\033[0m")  
             self.shutdown_node()
 
     def motionForward(self, increment_mm):
@@ -275,7 +308,7 @@ class MotionService(Node):
             self.odrv0.axis0.controller.move_incremental(increment_pos, False)
             self.odrv0.axis1.controller.move_incremental(increment_pos, False)
         except AttributeError:
-            self.get_logger().error("\033[91m[🚨 ERROR] Something went wrong with Odrive 🚨\033[0m")  
+            self.get_logger().error("\033[91m[🚨 motionForward] Something went wrong with Odrive 🚨\033[0m")  
             self.shutdown_node()
 
     def call_motion_has_started(self, increment_pos_0, increment_pos_1):
@@ -416,13 +449,18 @@ class MotionService(Node):
         self.odrv0.axis1.controller.config.input_mode = InputMode.TRAP_TRAJ
 
     def is_in_closed_loop_control(self):
-        axis0_state = self.odrv0.axis0.current_state
-        axis1_state = self.odrv0.axis1.current_state
+        try:
+            axis0_state = self.odrv0.axis0.current_state
+            axis1_state = self.odrv0.axis1.current_state
 
-        if axis0_state == AXIS_STATE_CLOSED_LOOP_CONTROL and axis1_state == AXIS_STATE_CLOSED_LOOP_CONTROL:
-            return True
-        else:
-            return False
+            if axis0_state == AXIS_STATE_CLOSED_LOOP_CONTROL and axis1_state == AXIS_STATE_CLOSED_LOOP_CONTROL:
+                return True
+            else:
+                return False
+        except AttributeError:
+            self.get_logger().error("\033[91m[🚨 is_in_closed_loop_control] Something went wrong with Odrive 🚨\033[0m")  
+            self.shutdown_node()
+
 
     def disable_motor_loop_control(self):
         if self.odrv0 is not None:
