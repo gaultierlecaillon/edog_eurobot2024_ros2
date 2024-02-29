@@ -6,16 +6,18 @@
   "startingPos": "0,0,0",
   "timer": 3,
   "strategy": [
-        {
-          "name": "Opening",
-          "actions": [
-            { "solarpanel": "yellow" },
-            { "solarpanel": "blue" },
-            { "solarpanel": "yellow" },
-            { "solarpanel": "blue" },
-            { "solarpanel": "yellow" },
-            { "solarpanel": "blue" }
-          ]
-        }
+    {
+      "name": "Starting Blocks",
+      "actions": [
+        { "waiting_tirette": true },
+        { "waiting_tirette": false }
+      ]
+    },
+    {
+      "name": "Opening",
+      "actions": [
+        { "solarpanel": "slow" }
+      ]
+    }
   ]
 }

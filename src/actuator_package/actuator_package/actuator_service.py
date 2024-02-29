@@ -85,7 +85,8 @@ class ActuatorService(Node):
                     self.down_elevator()
                     GPIO.output(self.EN_pin, GPIO.HIGH)
             else:
-                self.get_logger().info(f"unknown action: request.param: {request.param}")
+                self.get_logger().info(f"\033[91mself.get_logger().info(f\"Unknown action: {request.param} (elevator_callback)\")\033[0m")
+                
 
             response.success = True
         except Exception as e:
@@ -113,8 +114,21 @@ class ActuatorService(Node):
                 self.kit.servo[5].angle = self.actuator_config['solarpanel']['motor5']['default'] + offset
                 time.sleep(0.1)
                 self.initServo()
+            elif request.param == "slow":
+                self.kit.servo[4].angle = self.actuator_config['solarpanel']['motor4']['close']
+                self.kit.servo[5].angle = self.actuator_config['solarpanel']['motor5']['default']
+
+                for a in range(108, 175):
+                    self.kit.servo[4].angle = a
+                    time.sleep(0.05)
+                    
+                for a in range(174, 107, -1):  # start from 174 (since 175 is not included), end at 108 (since stop is exclusive), step -1
+                    self.kit.servo[4].angle = a
+                    time.sleep(0.05)
+
+
             else:
-                self.get_logger().info(f"unknown action: request.param: {request.param}")
+                self.get_logger().info(f"\033[91mself.get_logger().info(f\"Unknown action: {request.param} (solarpanel_callback)\")\033[0m")
 
             response.success = True
         except Exception as e:

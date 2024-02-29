@@ -19,7 +19,7 @@ class IANode(Node):
     current_action_already_printed = False
 
     # Declare Timer (Default 100 secondes)
-    shutdown_after_seconds = 10 # todo change to 100
+    shutdown_after_seconds = 100
 
     def __init__(self):
         super().__init__('ia_node')
@@ -32,10 +32,7 @@ class IANode(Node):
         self.actions_dict = []
         self.load_strategy()
 
-        # Match timer
-        self.match_timer = self.create_timer(self.shutdown_after_seconds, self.shutdown_nodes)
-
-        # ROS2 Node time
+        # ROS2 Node timer
         self.number_timer_ = self.create_timer(0.1, self.master_callback)
 
         ''' Publisher '''
@@ -101,12 +98,25 @@ class IANode(Node):
             Bool,
             "tirette_topic",
             lambda msg: self.callback_waiting_tirette(msg, param), 1)
+        if param:
+            self.get_logger().info(f"\033[95m[⏳ WAITING ⏳] Waiting for tirette\033[0m")
+        else:
+            self.get_logger().info(f"\033[95m[⏳ WAITING ⏳] Pull the tirette and the match will start for {self.shutdown_after_seconds}s 🏁\033[0m")
+
+
+
 
 
     def callback_waiting_tirette(self, msg, param):
-        if msg.data == cast_str_bool(param):
+        #if msg.data == cast_str_bool(param):
+        if msg.data == param:
+            if not param: # The tirette have been pulled, the Match start
+                # Match timer
+                self.match_timer = self.create_timer(self.shutdown_after_seconds, self.shutdown_nodes)
+            
             self.update_current_action_status('done')
             self.destroy_subscription(self.subscriber_)  # Unsubscribe from the topic
+
 
     def calibrate(self, param):
         service_name = "cmd_calibration_service"
