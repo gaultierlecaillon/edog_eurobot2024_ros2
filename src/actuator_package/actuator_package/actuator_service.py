@@ -16,12 +16,9 @@ from std_msgs.msg import Int32
 
 # Stepper (set first BCM)
 from RpiMotorLib import RpiMotorLib
-GPIO.setmode(GPIO.BCM)
 
 # Servo
 from adafruit_servokit import ServoKit
-stop_pin = 17
-GPIO.setup(stop_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
 
 class ActuatorService(Node):
@@ -89,7 +86,7 @@ class ActuatorService(Node):
     def publish_pid(self):
         msg = Int32()
         msg.data = os.getpid()  # Get the current process ID
-        #self.get_logger().error(f'\033[91m[publish_pid] {msg.data}\033[0m')
+        self.get_logger().error(f'\033[91m[publish_pid] {msg.data}\033[0m')
         self.pid_publisher.publish(msg)
 
     def motion_complete_callback(self, msg):
@@ -139,11 +136,6 @@ class ActuatorService(Node):
                 self.initServo()
             elif request.param == "slow":
                 for i in range(0,5):
-                    if GPIO.input(stop_pin) == GPIO.HIGH:
-                        break
-                    else:
-                        self.get_logger().info(f"GPIO.input(stop_pin): {GPIO.input(stop_pin)}")
-
                     self.kit.servo[4].angle = self.actuator_config['solarpanel']['motor4']['close']
                     self.kit.servo[5].angle = self.actuator_config['solarpanel']['motor5']['default']
                     time.sleep(0.2)
@@ -376,7 +368,7 @@ class ActuatorService(Node):
     
     def initStepper(self):
         self.stepper_motor = RpiMotorLib.A4988Nema(self.direction, self.step, (21, 21, 21), "DRV8825")
-        #GPIO.setmode(GPIO.BCM)        
+        GPIO.setmode(GPIO.BCM)        
         GPIO.setup(self.EN_pin, GPIO.OUT)  # set enable pin as output
         GPIO.output(self.EN_pin, GPIO.HIGH)
         time.sleep(0.5)
