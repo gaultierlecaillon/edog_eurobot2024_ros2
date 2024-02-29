@@ -16,6 +16,12 @@
     {
       "name": "Opening",
       "actions": [
+        { "solarpanel": "slow" },
+        { "solarpanel": "slow" },
+        { "solarpanel": "slow" },
+        { "solarpanel": "slow" },
+        { "solarpanel": "slow" },
+        { "solarpanel": "slow" },
         { "solarpanel": "slow" }
       ]
     }

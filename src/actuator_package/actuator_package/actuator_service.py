@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import time
 import json
 import rclpy
@@ -10,12 +11,17 @@ from robot_interfaces.srv import CmdActuatorService
 from robot_interfaces.srv import CmdForwardService
 from robot_interfaces.msg import MotionCompleteResponse
 from example_interfaces.msg import String
+from std_msgs.msg import Int32
+
+
+# Stepper (set first BCM)
+from RpiMotorLib import RpiMotorLib
+GPIO.setmode(GPIO.BCM)
 
 # Servo
 from adafruit_servokit import ServoKit
-
-# Stepper
-from RpiMotorLib import RpiMotorLib
+stop_pin = 17
+GPIO.setup(stop_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
 
 class ActuatorService(Node):
@@ -30,6 +36,10 @@ class ActuatorService(Node):
 
     def __init__(self):
         super().__init__("actuator_service")
+
+        self.pid_publisher = self.create_publisher(Int32, 'killable_nodes_pid', 10)
+        self.publish_pid()
+
         self.actuator_config = self.loadActuatorConfig()
         self.kit = ServoKit(channels=16)
         self.initStepper()
@@ -41,6 +51,13 @@ class ActuatorService(Node):
             'is_motion_complete',
             self.motion_complete_callback,
             10)
+        
+        self.create_subscription(
+            Bool,
+            'shutdown_topic',
+            self.shutdown_callback,
+            10)
+
         
         ''' Publisher '''
         if not hasattr(self, 'voice_publisher'):
@@ -68,6 +85,12 @@ class ActuatorService(Node):
             self.graber_callback)
 
         self.get_logger().info("Pince Service has been started.")
+
+    def publish_pid(self):
+        msg = Int32()
+        msg.data = os.getpid()  # Get the current process ID
+        #self.get_logger().error(f'\033[91m[publish_pid] {msg.data}\033[0m')
+        self.pid_publisher.publish(msg)
 
     def motion_complete_callback(self, msg):
         if msg.success and msg.service_requester == str(self.__class__.__name__):
@@ -115,16 +138,24 @@ class ActuatorService(Node):
                 time.sleep(0.1)
                 self.initServo()
             elif request.param == "slow":
-                self.kit.servo[4].angle = self.actuator_config['solarpanel']['motor4']['close']
-                self.kit.servo[5].angle = self.actuator_config['solarpanel']['motor5']['default']
+                for i in range(0,5):
+                    if GPIO.input(stop_pin) == GPIO.HIGH:
+                        break
+                    else:
+                        self.get_logger().info(f"GPIO.input(stop_pin): {GPIO.input(stop_pin)}")
 
-                for a in range(108, 175):
-                    self.kit.servo[4].angle = a
-                    time.sleep(0.05)
-                    
-                for a in range(174, 107, -1):  # start from 174 (since 175 is not included), end at 108 (since stop is exclusive), step -1
-                    self.kit.servo[4].angle = a
-                    time.sleep(0.05)
+                    self.kit.servo[4].angle = self.actuator_config['solarpanel']['motor4']['close']
+                    self.kit.servo[5].angle = self.actuator_config['solarpanel']['motor5']['default']
+                    time.sleep(0.2)
+                    self.kit.servo[4].angle = self.actuator_config['solarpanel']['motor4']['open']
+                    time.sleep(0.2)
+                    self.kit.servo[5].angle = self.actuator_config['solarpanel']['motor5']['blue']
+                    time.sleep(0.2)
+                    self.kit.servo[5].angle = self.actuator_config['solarpanel']['motor5']['default']
+                    time.sleep(0.5)
+                    self.kit.servo[4].angle = self.actuator_config['solarpanel']['motor4']['close']
+                    self.kit.servo[5].angle = self.actuator_config['solarpanel']['motor5']['default']
+
 
 
             else:
@@ -345,7 +376,7 @@ class ActuatorService(Node):
     
     def initStepper(self):
         self.stepper_motor = RpiMotorLib.A4988Nema(self.direction, self.step, (21, 21, 21), "DRV8825")
-        GPIO.setmode(GPIO.BCM)
+        #GPIO.setmode(GPIO.BCM)        
         GPIO.setup(self.EN_pin, GPIO.OUT)  # set enable pin as output
         GPIO.output(self.EN_pin, GPIO.HIGH)
         time.sleep(0.5)
@@ -353,9 +384,21 @@ class ActuatorService(Node):
     def initServo(self):
         self.kit.servo[4].angle = self.actuator_config['solarpanel']['motor4']['close']
         self.kit.servo[5].angle = self.actuator_config['solarpanel']['motor5']['default']
-        time.sleep(1)
+        time.sleep(0.5)
         self.kit.servo[4].angle = None
         self.kit.servo[5].angle = None
+    
+    def shutdown_callback(self, msg):       
+        if msg.data:                  
+            try:
+                self.get_logger().info("Shutdown signal received {msg}. Shutting down node... ") 
+                self.initServo()                
+                self.initStepper()  
+                GPIO.cleanup()
+            except Exception as e:
+                self.get_logger().error(f"Error during shutdown: {e}")
+            finally:
+                rclpy.shutdown()  # Shutdown the ROS client library for Python
 
 def main(args=None):
     rclpy.init(args=args)

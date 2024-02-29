@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 import json
+import time
 import rclpy
+import RPi.GPIO as GPIO
+import os
+import signal
+
 from rclpy.node import Node
 from functools import partial
 from std_msgs.msg import Bool
+from std_msgs.msg import Int32
 from robot_interfaces.srv import PositionBool
 from robot_interfaces.srv import CmdPositionService
 from robot_interfaces.srv import CmdActuatorService
@@ -12,6 +18,9 @@ from robot_interfaces.srv import CmdRotateService
 from robot_interfaces.msg import MotionCompleteResponse
 from example_interfaces.msg import String
 
+
+# Servo
+from adafruit_servokit import ServoKit
 
 class IANode(Node):
     action_name = None
@@ -23,6 +32,8 @@ class IANode(Node):
 
     def __init__(self):
         super().__init__('ia_node')
+
+        self.kit = ServoKit(channels=16)        
 
         # Declare and get the strategy_filename parameter
         self.config = None
@@ -38,8 +49,18 @@ class IANode(Node):
         ''' Publisher '''
         if not hasattr(self, 'voice_publisher'):
             self.voice_publisher = self.create_publisher(String, "voice_topic", 10)
+        
+        # Create a publisher for the shutdown signal
+        self.shutdown_publisher = self.create_publisher(Bool, 'shutdown_topic', 10)
 
         ''' Subscribers '''
+        self.pids = []
+        self.create_subscription(
+            Int32,
+            'killable_nodes_pid',
+            self.kill_callback,
+            10)        
+
         self.create_subscription(
             MotionCompleteResponse,
             "is_motion_complete",
@@ -77,9 +98,8 @@ class IANode(Node):
                     exit(1)
         else:
             self.get_logger().info(
-                "\033[38;5;208m[Match done] No more actions to exec\n\n\t\t\t (⌐■_■) 𝘪𝘴 𝘪𝘵 𝘗1 ?\033[0m\n")
-
-            rclpy.shutdown()
+                "\033[38;5;208m[Match done] No more actions to exec\n\n\t\t\t (⌐■_■) 𝘪𝘴 𝘪𝘵 𝘗1 ?\033[0m\n")            
+            self.shutdown_nodes()
 
     def is_motion_complete_callback(self, msg):
         action_name = next(iter(self.actions_dict[0]['action']))
@@ -108,7 +128,6 @@ class IANode(Node):
 
 
     def callback_waiting_tirette(self, msg, param):
-        #if msg.data == cast_str_bool(param):
         if msg.data == param:
             if not param: # The tirette have been pulled, the Match start
                 # Match timer
@@ -360,17 +379,59 @@ class IANode(Node):
         self.get_logger().info(f"[Publish topic] voice_topic msg:{msg}")
 
     '''
-    Shutdown the node at the end of the Match (default 100s)
+    Shutdown the node at the end of the Match
     '''
+
+    def kill_callback(self, msg):
+        self.pids.append(msg.data)
+        #self.get_logger().error(f'\033[91mReceived PIDs: {self.pids}\033[0m')        
+
+    def kill_all(self):
+        
+        self.get_logger().error('\033[91mKILL THEM ALL !\033[0m')
+
+        for pid in self.pids:            
+            self.kill_process(pid)
+    
+    def kill_process(self, pid):
+        if pid:
+            try:
+                # Replace 'SIGINT' with 'SIGKILL' if necessary
+                os.kill(pid, signal.SIGINT)
+                self.get_logger().info(f'Successfully sent kill signal to PID {pid}')
+            except Exception as e:
+                self.get_logger().info(f'Failed to kill process {pid}: {e}')
+    
+    def disableActuators(self):
+        self.kit.servo[0].angle = None
+        self.kit.servo[1].angle = None
+        self.kit.servo[2].angle = None
+        self.kit.servo[3].angle = None
+        self.kit.servo[4].angle = None
+        self.kit.servo[5].angle = None
+        #todo add stepper
+
     def shutdown_nodes(self):
         self.get_logger().info(f"\033[38;5;208m[Match done] Time Out ! {self.config['timer']} secondes\n\n\t\t\t (⌐■_■) 𝘪𝘴 𝘪𝘵 𝘗1 ?\n\033[0m\n")
-        # Perform any necessary cleanup here
-        self.match_timer.cancel()
+        self.kill_all()
+        self.match_timer.cancel()        
+        self.actions_dict.clear()
+        self.disableActuators()
+
+        try:           
+            # Allow some time for the publisher to be set up
+            rclpy.spin_once(self, timeout_sec=0.1)
+
+            # Publish the shutdown message
+            shutdown_msg = Bool()
+            shutdown_msg.data = True  # Message indicating shutdown
+            self.shutdown_publisher.publish(shutdown_msg)
+            self.get_logger().info('Published shutdown signal')
+        except Exception as e:
+            self.get_logger().error('Error while publishing shutdown signal: {}'.format(e))
+
+        # Shutdown the ROS context
         rclpy.shutdown()
-
-
-def cast_str_bool(var):
-    return var == 'True'
 
 
 def main(args=None):
