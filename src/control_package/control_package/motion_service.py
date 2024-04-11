@@ -108,7 +108,7 @@ class MotionService(Node):
             odrv_tmp = odrive.find_any(timeout=0.1)
             end_time = time.time()
             duration = (end_time - start_time)
-            self.get_logger().info(f"The execution took {duration} s")
+            #self.get_logger().info(f"The execution took {duration} s")
 
             if odrv_tmp is None:
                 self.get_logger().info("ODrive connection lost.")
@@ -116,12 +116,10 @@ class MotionService(Node):
                 msg = Bool()
                 msg.data = True
                 self.bau_publisher.publish(msg)
-            else:
-                self.get_logger().info("ODrive connected :)")
+            #else:
+            #    self.get_logger().info("ODrive connected :)")
         except Exception as e:
             self.get_logger().info(f"An error occurred while trying to connect to ODrive: {e}")
-            # It might be wise to publish the lost connection message here as well,
-            # since an exception here likely indicates communication issues.
             msg = Bool()
             msg.data = True
             self.bau_publisher.publish(msg)

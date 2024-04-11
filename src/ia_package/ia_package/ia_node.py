@@ -355,7 +355,8 @@ class IANode(Node):
             with open('/home/edog/ros2_ws/src/ia_package/resource/' + self.strategy_filename + '.json') as file:
                 self.config = json.load(file)
 
-            if self.config['timer']:
+
+            if 'timer' in self.config:
                 self.shutdown_after_seconds = int(self.config['timer'])
 
             # Logging the loaded strategy information

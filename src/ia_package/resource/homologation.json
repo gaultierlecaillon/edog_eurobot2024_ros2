@@ -4,6 +4,7 @@
     "description": "Strat that move forward, grab plants and drop them",
     "color": "green",
     "startingPos": "0,0,0",
+    "timer": "100",
     "strategy": [
         {
             "name": "Starting Blocks",
