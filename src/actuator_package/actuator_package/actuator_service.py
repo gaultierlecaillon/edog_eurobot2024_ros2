@@ -195,11 +195,15 @@ class ActuatorService(Node):
             self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']    
             time.sleep(1)
             
-            # forward 
-            time.sleep(5)
+            self.cmd_forward(700)
+            time.sleep(3)
             
             step = self.actuator_config['elevator']['level1']
             self.move_elevator(step)
+            #do top before /!\
+            self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['plant'] #bottom
+            
+            time.sleep(2)
             
             
             
@@ -312,6 +316,8 @@ class ActuatorService(Node):
         time.sleep(0.5)
         # todo: add for solar panel servo
         
+        self.kit.servo[0].angle = None
+        self.kit.servo[1].angle = None
         self.kit.servo[2].angle = None
         self.kit.servo[3].angle = None
         self.kit.servo[4].angle = None

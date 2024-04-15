@@ -411,7 +411,6 @@ class IANode(Node):
                 self.get_logger().info(f'Failed to kill process {pid}: {e}')
     
     def disableActuators(self):
-        self.get_logger().info(f'\n\nCLEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAAAAAAAAAAAAAAAAAAAAAAAAAAAANNNNN')
         #servos
         self.kit.servo[0].angle = None
         self.kit.servo[1].angle = None

@@ -7,11 +7,17 @@
   "timer": "100",
   "strategy": [
     {
+      "name": "Starting Blocks",
+      "actions": [
+        { "calibrate": "True" }
+      ]
+    },
+    {
       "name": "Opening",
       "actions": [
-        {
-          "graber": ""
-        }
+        {"graber": ""},
+        { "forward": "-700" },
+        { "forward": "100" }
       ]
     }
   ]

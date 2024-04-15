@@ -20,7 +20,8 @@
     },
     "motor3": {
       "close": 90,
-      "open": 22
+      "open": 22,
+      "plant": 45
     }
   },
   "solarpanel": {
@@ -38,6 +39,6 @@
   "elevator": {
       "up": 375,
       "down": 0,
-      "level1": 100
+      "level1": 150
   }
 }
