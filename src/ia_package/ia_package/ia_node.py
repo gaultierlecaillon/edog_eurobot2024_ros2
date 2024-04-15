@@ -254,6 +254,7 @@ class IANode(Node):
         request = CmdForwardService.Request()
         request.service_requester = str(self.__class__.__name__)
         request.distance_mm = int(param)
+        request.mode = 'normal'
 
         client.call_async(request)
 
