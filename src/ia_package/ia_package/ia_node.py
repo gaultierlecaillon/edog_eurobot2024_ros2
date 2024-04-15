@@ -344,7 +344,7 @@ class IANode(Node):
             self.actions_dict.pop(0)
             self.get_logger().info(
                 f"[NEXT ACTION(S)] {self.actions_dict}")
-            self.speak("task_complet_sound.mp3")
+            #self.speak("task_complet_sound.mp3")
         else: # on going
             self.actions_dict[0]['status'] = status
         self.current_action_already_printed = False
