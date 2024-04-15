@@ -1,0 +1,18 @@
+{
+  "type": "Demo",
+  "name": "graper.json",
+  "description": "",
+  "color": "green",
+  "startingPos": "0,0,0",
+  "timer": "100",
+  "strategy": [
+    {
+      "name": "Opening",
+      "actions": [
+        {
+          "graber": ""
+        }
+      ]
+    }
+  ]
+}

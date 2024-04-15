@@ -395,8 +395,7 @@ class IANode(Node):
         self.pids.append(msg.data)
         self.get_logger().error(f'\033[91mReceived PIDs: {self.pids}\033[0m')        
 
-    def kill_all(self):
-        
+    def kill_all(self):        
         self.get_logger().error('\033[91mKILL THEM ALL !\033[0m')
 
         for pid in self.pids:            
@@ -412,20 +411,27 @@ class IANode(Node):
                 self.get_logger().info(f'Failed to kill process {pid}: {e}')
     
     def disableActuators(self):
+        self.get_logger().info(f'\n\nCLEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAAAAAAAAAAAAAAAAAAAAAAAAAAAANNNNN')
+        #servos
         self.kit.servo[0].angle = None
         self.kit.servo[1].angle = None
         self.kit.servo[2].angle = None
         self.kit.servo[3].angle = None
         self.kit.servo[4].angle = None
         self.kit.servo[5].angle = None
-        #todo add stepper
+        
+        #stepper
+        EN_pin = 24  
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(EN_pin, GPIO.OUT)
+        GPIO.output(EN_pin, GPIO.HIGH)  # Disable the driver
+        GPIO.cleanup()  # Cleanup the GPIO
 
     def shutdown_nodes(self):
-        self.get_logger().info(f"\033[38;5;208m[SHUTDOW NODE] Adios\n\n\t\t\t (⌐■_■) 𝘪𝘴 𝘪𝘵 𝘗1 ?\n\033[0m\n")
-        self.kill_all()
-        self.match_timer.cancel()        
+        self.get_logger().info(f"\033[38;5;208m[SHUTDOW NODE] Adios\n\n\t\t\t (⌐■_■) 𝘪𝘴 𝘪𝘵 𝘗1 ?\n\033[0m\n")        
+        #self.match_timer.cancel() # todo 'IANode' object has no attribute 'match_timer' when no tirette        
         self.actions_dict.clear()
-        self.disableActuators()
+        self.disableActuators()        
 
         try:           
             # Allow some time for the publisher to be set up
@@ -436,6 +442,7 @@ class IANode(Node):
             shutdown_msg.data = True  # Message indicating shutdown
             self.shutdown_publisher.publish(shutdown_msg)
             self.get_logger().info('Published shutdown signal')
+            self.kill_all()
         except Exception as e:
             self.get_logger().error('Error while publishing shutdown signal: {}'.format(e))
 

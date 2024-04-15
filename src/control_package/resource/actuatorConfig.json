@@ -1,13 +1,13 @@
 {
   "pince": {
     "motor0": {
-      "close": 0,
+      "close": 6,
       "open": 80,
       "extend": 100,
       "tight": 50
     },
     "motor1": {
-      "close": 165,
+      "close": 162,
       "open": 88,
       "extend": 68,
       "tight": 118
@@ -19,8 +19,8 @@
       "open": 93
     },
     "motor3": {
-      "close": 180,
-      "open": 80
+      "close": 90,
+      "open": 22
     }
   },
   "solarpanel": {
@@ -38,6 +38,6 @@
   "elevator": {
       "up": 375,
       "down": 0,
-      "plant": 0
+      "level1": 100
   }
 }
