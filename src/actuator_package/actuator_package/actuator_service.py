@@ -188,76 +188,33 @@ class ActuatorService(Node):
 
     def graber_callback(self, request, response):
         try:
-            self.close_pince()
-            self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['close']
-            self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']    
-            time.sleep(1)        
             self.get_logger().info(f"graber_callback Called : param={request.param}")
-
-            if request.param == "":                
-                self.extend_pince()
-                time.sleep(0.5)
-                self.up_elevator()
-                self.cmd_forward(300)
-                time.sleep(1) # This value MUST be superior than forward otherwise it fuck up everything => FIX IT ASAP
-                self.open_pince()
-                time.sleep(1)
-                self.cmd_forward(130)
-                time.sleep(0.1 )                
-                self.tight_pince()
-                time.sleep(1)
-                self.open_pince()
-                self.cmd_forward(-200)
-                time.sleep(1)
-                self.close_pince()
-                self.cmd_forward(120)
-                time.sleep(1.5)
-                self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['open']
-                time.sleep(0.25) 
-
-                self.plant_elevator()
-                time.sleep(1.5)
-                self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['close']
-                time.sleep(0.2)
-                self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']
-                self.cmd_forward(-20)
-                time.sleep(0.1)
-                self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['close']
-                time.sleep(1.5)
-                self.up_elevator()
-                time.sleep(1)
-                self.cmd_forward(-400)
-                time.sleep(4)
-                self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']
-                time.sleep(2)
-                self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['close']
-                self.down_elevator()
-
-
+            self.open_pince()
+            time.sleep(0.5)
+            self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['open']
+            self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']    
+            time.sleep(1)
+            
+            self.cmd_forward(400, 'slow')
+            time.sleep(2)
+            
+            step = self.actuator_config['elevator']['level1']
+            self.move_elevator(step)
+            
+            self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['plant'] #top            
+            self.cmd_forward(500, 'slow')
+            time.sleep(2)
+            self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['plant'] #bottom
+            self.move_elevator(250)            
+            time.sleep(0.5)
+            self.close_pince()
+            
+            if request.param == "":
+                self.get_logger().info(f"params default")
             elif request.param == "up":
-                self.up_elevator()
-                time.sleep(0.5)
-                self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['open']
-                time.sleep(10)
-                self.down_elevator()
-            elif request.param == "loop":
-                for i in range(5):
-                    self.up_elevator() 
-                    time.sleep(2)               
-                    self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['open']
-                    self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']
-                    time.sleep(2)
-                    self.down_elevator()
-                    time.sleep(1)  
-                    self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['close']
-                    time.sleep(1)
-                
-                self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['close']
-                self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']
+                self.get_logger().info(f"params up")
             else:
                 self.get_logger().error(f"graber_callback unknown params")
-
-
             response.success = True
         except Exception as e:
             self.get_logger().error(f"Failed to execute pince_callback: {e}")
@@ -291,41 +248,17 @@ class ActuatorService(Node):
         self.kit.servo[1].angle = self.actuator_config['pince']['motor1']['extend']
 
     def down_elevator(self):
-        GPIO.output(self.EN_pin, GPIO.LOW)
-        step = step = self.actuator_config['elevator']['down']
-        delta = step - self.elevator_position
-        self.get_logger().info(f"Elevator DOWN {delta}")
+        step = self.actuator_config['elevator']['down']
+        self.move_elevator(step)
 
-        self.stepper_motor.motor_go(delta < 0,  # True=Clockwise, False=Counter-Clockwise
-                                    "Full",  # Step type (Full,Half,1/4,1/8,1/16,1/32)
-                                    abs(delta),  # number of steps
-                                    .0008,  # step delay [sec]
-                                    False,  # True = print verbose output
-                                    .05)  # initial delay [sec]
-        self.elevator_position = step
-        GPIO.output(self.EN_pin, GPIO.HIGH)
-
-    def plant_elevator(self):
-        GPIO.output(self.EN_pin, GPIO.LOW)
-        step = step = self.actuator_config['elevator']['plant']
-        delta = step - self.elevator_position
-        self.get_logger().info(f"Elevator DOWN {delta}")
-
-        self.stepper_motor.motor_go(delta < 0,  # True=Clockwise, False=Counter-Clockwise
-                                    "Full",  # Step type (Full,Half,1/4,1/8,1/16,1/32)
-                                    abs(delta),  # number of steps
-                                    .0008,  # step delay [sec]
-                                    False,  # True = print verbose output
-                                    .05)  # initial delay [sec]
-        self.elevator_position = step
-        GPIO.output(self.EN_pin, GPIO.HIGH)
-
-    
     def up_elevator(self):
-        GPIO.output(self.EN_pin, GPIO.LOW)
         step = self.actuator_config['elevator']['up']
+        self.move_elevator(step)
+        
+    def move_elevator(self, step):
+        GPIO.output(self.EN_pin, GPIO.LOW)
         delta = step - self.elevator_position
-        self.get_logger().info(f"Elevator UP {abs(delta)}")
+        self.get_logger().info(f"Move elevator to {abs(delta)}")
 
         self.stepper_motor.motor_go(delta < 0,  # True=Clockwise, False=Counter-Clockwise
                                     "Full",  # Step type (Full,Half,1/4,1/8,1/16,1/32)
@@ -336,7 +269,7 @@ class ActuatorService(Node):
         self.elevator_position = step       
 
     ''' Motion Funcitons '''
-    def cmd_forward(self, distance_mm):
+    def cmd_forward(self, distance_mm, mode='normal'):
         service_name = "cmd_forward_service"
 
         self.get_logger().info(f"[Exec Action] forward of: {distance_mm}mm")
@@ -347,6 +280,7 @@ class ActuatorService(Node):
         request = CmdForwardService.Request()
         request.service_requester = self.__class__.__name__
         request.distance_mm = int(distance_mm)
+        request.mode = mode
         client.call_async(request)
 
         self.get_logger().info(f"[Publish] {request} to {service_name}")
@@ -374,9 +308,19 @@ class ActuatorService(Node):
         time.sleep(0.5)
 
     def initServo(self):
-        self.kit.servo[4].angle = self.actuator_config['solarpanel']['motor4']['close']
-        self.kit.servo[5].angle = self.actuator_config['solarpanel']['motor5']['default']
+        self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['close']
+        time.sleep(0.25)
+        self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['close']        
         time.sleep(0.5)
+        self.kit.servo[0].angle = self.actuator_config['pince']['motor0']['close']
+        self.kit.servo[1].angle = self.actuator_config['pince']['motor1']['close']
+        time.sleep(0.5)
+        # todo: add for solar panel servo
+        
+        self.kit.servo[0].angle = None
+        self.kit.servo[1].angle = None
+        self.kit.servo[2].angle = None
+        self.kit.servo[3].angle = None
         self.kit.servo[4].angle = None
         self.kit.servo[5].angle = None
     

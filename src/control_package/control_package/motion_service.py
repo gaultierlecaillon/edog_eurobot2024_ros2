@@ -236,6 +236,10 @@ class MotionService(Node):
     #
     def forward_callback(self, request, response):
         self.get_logger().info(f"Cmd forward_callback received: {request}")
+        
+        if request.mode == 'slow':
+            print("mode slow")
+            # do something
 
         self.motionForward(request.distance_mm)
         self.x_target = self.x_ + round(request.distance_mm * math.cos(math.radians(self.r_)), 2)

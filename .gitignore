@@ -85,3 +85,4 @@ devel_isolated/rosidl_generator_dds_idl/*
 build_isolated/rosidl_generator_dds_idl_cpp/*
 devel_isolated/rosidl_generator_dds_idl_cpp/*
 
+src/sllidar_ros2
