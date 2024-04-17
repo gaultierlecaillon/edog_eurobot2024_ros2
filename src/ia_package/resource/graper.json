@@ -15,9 +15,9 @@
     {
       "name": "Opening",
       "actions": [
-        { "forward": "500" },
+        { "forward": "200" },
         {"graber": ""},
-        { "goto": "0,0,180" }
+        { "forward": "-1100" }
       ]
     }
   ]

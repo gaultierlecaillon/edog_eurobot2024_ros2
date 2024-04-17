@@ -15,13 +15,14 @@
   },
   "graber": {
     "motor2": {
-      "close": 0,
-      "open": 93
+      "close": 30,
+      "open": 126,
+      "plant": 50
     },
     "motor3": {
       "close": 90,
       "open": 22,
-      "plant": 45
+      "plant": 40
     }
   },
   "solarpanel": {
@@ -39,6 +40,6 @@
   "elevator": {
       "up": 375,
       "down": 0,
-      "level1": 150
+      "level1": 130
   }
 }
