@@ -47,6 +47,7 @@ class MotionService(Node):
         'evitement': True,
     }
 
+    # Allow to know which service called Motion Service
     last_callback_service_requester = ""
 
     def __init__(self):
@@ -64,10 +65,10 @@ class MotionService(Node):
         self.bau_publisher = self.create_publisher(Bool, "bau_topic", 10)
 
         ''' Services '''
-        self.calibration_service_ = self.create_service(
+        self.create_service(
             PositionBool,
-            "cmd_calibration_service",
-            self.calibration_callback)
+            "cmd_brushless_calibration_service",
+            self.brushless_calibration_callback)
 
         self.position_service_ = self.create_service(
             CmdPositionService,
@@ -137,7 +138,16 @@ class MotionService(Node):
         self.calibration_config["linear"]["coef"] = self.calibration_config["linear"]["pos"] / self.calibration_config["linear"]["mm"]
         print("self.calibration_config", self.calibration_config)
 
-    def calibration_callback(self, request, response):
+    def dynamic_calibration_callback(self, request, response):
+        self.setPID("emergency_stop.json")
+        self.setPIDGains("emergency_stop.json")
+        
+        self.get_logger().info(f"request {request}");
+        
+        response.success = True
+        return response
+        
+    def brushless_calibration_callback(self, request, response):
 
         # Find a connected ODrive (this will block until you connect one)
         self.connect_to_odrive()       
@@ -151,7 +161,7 @@ class MotionService(Node):
 
             self.get_logger().warn(f"Robot already in closed loop control")
         else:
-            self.get_logger().info(f"Starting calibration...")
+            self.get_logger().info(f"🪐 Starting Brushless Calibration... 🪐")
             self.odrv0.axis0.requested_state = AXIS_STATE_FULL_CALIBRATION_SEQUENCE
             self.odrv0.axis1.requested_state = AXIS_STATE_FULL_CALIBRATION_SEQUENCE
 
@@ -175,7 +185,6 @@ class MotionService(Node):
 
         self.connection_check_timer = self.create_timer(1, self.check_odrive_connection)
         response.success = True
-        time.sleep(0.2)
         return response
 
     def emergency_stop_callback(self, msg):

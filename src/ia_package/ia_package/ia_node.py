@@ -111,7 +111,7 @@ class IANode(Node):
         self.get_logger().info(f"\033[38;5;208m[motion_complete_callback] Received in IAService: {msg} for {action_name}\033[0m")
 
         if msg.success and msg.service_requester == str(self.__class__.__name__):
-            if action_name == 'graber':
+            if action_name == 'graber' or action_name == 'drop' :
                 self.get_logger().info(f"\033[38;5;208mIgnore this motion complete graber\033[0m")
                 pass
             else:
@@ -143,7 +143,7 @@ class IANode(Node):
 
 
     def calibrate(self, param):
-        service_name = "cmd_calibration_service"
+        service_name = "cmd_brushless_calibration_service"
 
         self.get_logger().info(f"[Exec Action] calibrate with param: {param}")
         client = self.create_client(PositionBool, service_name)
@@ -160,7 +160,7 @@ class IANode(Node):
         future.add_done_callback(
             partial(self.callback_current_action))
 
-        self.get_logger().info(f"[Publish] {request} to cmd_calibration_service")
+        self.get_logger().info(f"[Publish] {request} to cmd_brushless_calibration_service")
 
     def led(self, param):
         service_name = "cmd_led_service"
@@ -214,6 +214,22 @@ class IANode(Node):
     def graber(self, param):
         service_name = "cmd_graber_service"
         self.get_logger().info(f"Performing 'Graber' action with param: {param}")
+        client = self.create_client(CmdActuatorService, service_name)
+        while not client.wait_for_service(1):
+            self.get_logger().warn(f"Waiting for Server {service_name} to be available...")
+
+        request = CmdActuatorService.Request()
+        request.param = param
+        future = client.call_async(request)
+
+        future.add_done_callback(
+            partial(self.callback_current_action))
+
+        self.get_logger().info(f"[Publish] {request} to {service_name}")
+    
+    def drop(self, param):
+        service_name = "cmd_drop_service"
+        self.get_logger().info(f"Performing 'Drop' action with param: {param}")
         client = self.create_client(CmdActuatorService, service_name)
         while not client.wait_for_service(1):
             self.get_logger().warn(f"Waiting for Server {service_name} to be available...")
@@ -394,7 +410,7 @@ class IANode(Node):
 
     def kill_callback(self, msg):
         self.pids.append(msg.data)
-        self.get_logger().error(f'\033[91mReceived PIDs: {self.pids}\033[0m')        
+        #self.get_logger().error(f'\033[91mReceived PIDs: {self.pids}\033[0m')        
 
     def kill_all(self):        
         self.get_logger().error('\033[91mKILL THEM ALL !\033[0m')

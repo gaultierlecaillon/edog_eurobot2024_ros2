@@ -79,6 +79,11 @@ class ActuatorService(Node):
             CmdActuatorService,
             "cmd_graber_service",
             self.graber_callback)
+        
+        self.create_service(
+            CmdActuatorService,
+            "cmd_drop_service",
+            self.drop_callback)
 
         self.publish_pid()
         self.get_logger().info("Pince Service has been started.")
@@ -86,12 +91,12 @@ class ActuatorService(Node):
     def publish_pid(self):
         msg = Int32()
         msg.data = os.getpid()  # Get the current process ID
-        self.get_logger().error(f'\033[91m[publish_pid] {msg.data}\033[0m')
+        #self.get_logger().error(f'\033[91m[publish_pid] {msg.data}\033[0m')
         self.pid_publisher.publish(msg)
 
     def motion_complete_callback(self, msg):
         if msg.success and msg.service_requester == str(self.__class__.__name__):
-            self.get_logger().info(f"\033[38;5;208m[motion_complete_callback] Received in ActuatorService: {msg.data}\033[0m")
+            self.get_logger().info(f"\033[38;5;208m[motion_complete_callback] Received in ActuatorService: {msg}\033[0m")
 
     def elevator_callback(self, request, response):
         try:
@@ -185,14 +190,37 @@ class ActuatorService(Node):
             self.get_logger().error(f"Failed to execute pince_callback: {e}")
             response.success = False
         return response
+    
+    def drop_callback(self, request, response):
+        try:
+            self.get_logger().info(f"Drop_callback Called : {request}")
+            up_level = self.actuator_config['elevator']['up']
+            self.move_elevator(up_level)
+            time.sleep(1)
+            
+            self.cmd_forward(200, 'slow')
+            time.sleep(2)
+            self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open'] #bottom 
+            jardiniere_level = self.actuator_config['elevator']['jardiniere']
+            self.move_elevator(jardiniere_level)
+            time.sleep(1)
+            self.cmd_forward(-500, 'slow')
+            time.sleep(3)
+            
+            response.success = True
+        except Exception as e:
+            self.get_logger().error(f"Failed to execute drop_callback: {e}")
+            response.success = False
 
+        return response
+            
     def graber_callback(self, request, response):
         try:
             self.get_logger().info(f"graber_callback Called : param={request.param}")
             self.open_pince()
             time.sleep(0.5)
-            self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['open']
-            self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']    
+            self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['open'] #top 
+            self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']  #bottom  
             time.sleep(1)
             
             self.cmd_forward(400, 'slow')
@@ -201,13 +229,14 @@ class ActuatorService(Node):
             step = self.actuator_config['elevator']['level1']
             self.move_elevator(step)
             
-            self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['plant'] #top            
+            self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['plant'] #top 
+         
             self.cmd_forward(500, 'slow')
             time.sleep(2)
             self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['plant'] #bottom
             self.move_elevator(250)            
             time.sleep(0.5)
-            self.close_pince()
+            self.close_pince()         
             
             if request.param == "":
                 self.get_logger().info(f"params default")

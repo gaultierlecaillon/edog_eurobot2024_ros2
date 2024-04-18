@@ -17,7 +17,8 @@
       "actions": [
         { "forward": "200" },
         {"graber": ""},
-        { "forward": "-1100" }
+        { "forward": "200" },
+        { "drop": "" }
       ]
     }
   ]
