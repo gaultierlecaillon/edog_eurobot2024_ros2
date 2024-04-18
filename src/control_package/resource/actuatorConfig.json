@@ -15,7 +15,7 @@
   },
   "graber": {
     "motor2": {
-      "close": 30,
+      "close": 33,
       "open": 126,
       "plant": 50
     },
@@ -38,8 +38,9 @@
     }    
   },
   "elevator": {
-      "up": 375,
+      "up": 500,
       "down": 0,
-      "level1": 130
+      "level1": 120,
+      "jardiniere": 450
   }
 }

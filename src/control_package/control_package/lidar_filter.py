@@ -125,20 +125,21 @@ class LidarFilter(Node):
 
                 # Convert polar coordinates to Cartesian coordinates
                 angle_rad = numpy.radians(angle)
-                x = distance * numpy.cos(angle_rad)  # in m
-                y = distance * numpy.sin(angle_rad)  # in m
+                dist_x = distance * numpy.cos(angle_rad)  # in m
+                dist_y = distance * numpy.sin(angle_rad)  # in m
 
                 # Convert robot's angle to radians for trigonometry
                 r_rad = math.radians(self.r_)
 
-                x_obstacle = round(x * 1000 * math.cos(r_rad) - y * math.sin(r_rad) + self.x_)
-                y_obstacle = round(x * 1000 * math.sin(r_rad) + y * math.cos(r_rad) + self.y_)
+                x_obstacle = self.x_ + (dist_x*1000) * math.cos(r_rad) - (dist_y*1000) * math.sin(r_rad)
+                y_obstacle = self.y_ + (dist_x*1000) * math.cos(r_rad) - (dist_y*1000) * math.sin(r_rad)
 
-                if self.min_distance < x < self.emergency_distance \
-                        and -0.3 < y < 0.3 \
+
+                if self.min_distance < dist_x < self.emergency_distance \
+                        and -0.3 < dist_y < 0.3 \
                         and 200 < x_obstacle < 2800 \
                         and 200 < y_obstacle < 1800:
-                    # self.get_logger().info(f"x {round(x,4)}, y={round(y,4)}")
+                    self.get_logger().info(f"👮 Obstacle ! dist_x:={round(dist_x,2)}m, dist_y={round(dist_y,2)}m; Ostacle Position ({round(x_obstacle)}, {round(y_obstacle)})")
                     emergency_stop_msg.data = True
                     self.emergency_stop_publisher_.publish(emergency_stop_msg)                    
                     return
