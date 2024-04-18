@@ -3,7 +3,7 @@
   "name": "start_yellow.json",
   "description": "start Yellow, opening solr",
   "color": "yellow",
-  "startingPos": "225,1775,180",
+  "startingPos": "0,0,0",
   "timer": "100",
   "strategy": [
     {
@@ -15,12 +15,7 @@
     {
       "name": "Opening",
       "actions": [
-        { "forward": "-600" },
-        { "goto": "1180,1630,-1" },
-        { "graber": "" },
-        { "forward": "-100" },
-        { "goto": "1214,1442,-1" },
-        { "depose": "250,1750,180" }
+        { "depose": "200,0,-1" }
       ]
     }
   ]

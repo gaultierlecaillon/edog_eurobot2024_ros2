@@ -262,25 +262,34 @@ class MotionService(Node):
         return response
 
     def goto_callback(self, request, response):
-        self.get_logger().info(f"Cmd goto_callback received: {request}")
+        try:    
+            self.get_logger().info(f"Cmd goto_callback received: {request}")
 
-        # Calculate the target_angle in degrees to reach the point(x,y)
-        target_angle = math.degrees(math.atan2(request.y - self.y_, request.x - self.x_)) - self.r_
+            # Calculate the target_angle in degrees to reach the point(x,y)
+            target_angle = math.degrees(math.atan2(request.y - self.y_, request.x - self.x_)) - self.r_
+            if target_angle > 180:
+                target_angle = -180 + (target_angle - 180)
+            if target_angle < -180:
+                target_angle = 180 + (target_angle + 180)
 
-        # Calculate the distance between A and B in mm
-        increment_mm = math.sqrt((request.x - self.x_) ** 2 + (request.y - self.y_) ** 2)
-        # Calculate the finak angle
+            # Calculate the distance between A and B in mm
+            increment_mm = math.sqrt((request.x - self.x_) ** 2 + (request.y - self.y_) ** 2)
+            # Calculate the finak angle
 
-        final_target_angle = request.r - target_angle - self.r_
-        self.get_logger().warn(f"final_target_angle={final_target_angle}={target_angle} + {self.r_}+{request.r}")
+            final_target_angle = request.r - target_angle - self.r_
+            #self.get_logger().warn(f"final_target_angle={final_target_angle}={target_angle} + {self.r_}+{request.r}")
 
-        if request.r == -1:
-            final_target_angle = 0
+            if request.r == -1:
+                final_target_angle = 0
 
-        response.cmd = CmdPositionResult()
-        response.cmd.rotation = float(target_angle)
-        response.cmd.forward = int(increment_mm)
-        response.cmd.final_rotation = float(final_target_angle)
+            response.cmd = CmdPositionResult()
+            response.cmd.rotation = float(target_angle)
+            response.cmd.forward = int(increment_mm)
+            response.cmd.final_rotation = float(final_target_angle)
+        except Exception as e:
+            self.get_logger().error(f"Failed to execute goto_callback: {e}")
+            response.success = False
+            
         return response
 
     def motionRotate(self, target_angle):

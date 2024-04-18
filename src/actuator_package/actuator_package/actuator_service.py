@@ -10,6 +10,7 @@ from std_msgs.msg import Bool
 from robot_interfaces.srv import CmdActuatorService
 from robot_interfaces.srv import CmdForwardService
 from robot_interfaces.msg import MotionCompleteResponse
+from robot_interfaces.srv import CmdPositionService
 from example_interfaces.msg import String
 from std_msgs.msg import Int32
 
@@ -79,6 +80,11 @@ class ActuatorService(Node):
             CmdActuatorService,
             "cmd_graber_service",
             self.graber_callback)
+        
+        self.create_service(
+            CmdActuatorService,
+            "cmd_depose_top_service",
+            self.depose_top_callback)
 
         self.publish_pid()
         self.get_logger().info("Pince Service has been started.")
@@ -185,29 +191,56 @@ class ActuatorService(Node):
             self.get_logger().error(f"Failed to execute pince_callback: {e}")
             response.success = False
         return response
+    
+    def depose_top_callback(self, request, response):
+        try:            
+            self.get_logger().info(f"depose_top_callback Called : received={request.param}")
+            
+            self.open_pince();
+            time.sleep(0.5);
+            
+            step = self.actuator_config['elevator']['down']
+            self.move_elevator(step)
+                        
+            self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']
+            time.sleep(0.05)
+            self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['open']
+            time.sleep(1)
+            
+            self.cmd_forward(1000, 'slow')
+            time.sleep(2)
+            
+            self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['close']
+            time.sleep(0.05)
+            self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['close']
+            time.sleep(0.25)
+            self.close_pince();
+            
+            response.success = True
+        except Exception as e:
+            self.get_logger().error(f"Failed to execute pince_callback: {e}")
+            response.success = False
+
+        return response
 
     def graber_callback(self, request, response):
         try:
             self.get_logger().info(f"graber_callback Called : param={request.param}")
             self.open_pince()
             time.sleep(0.5)
-            self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['open']
-            self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']    
+            self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']
+            time.sleep(0.05)
+            self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['open']           
+                
             time.sleep(1)
             
-            self.cmd_forward(400, 'slow')
+            self.cmd_forward(300, 'slow')
             time.sleep(2)
             
             step = self.actuator_config['elevator']['level1']
             self.move_elevator(step)
             
-            self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['plant'] #top            
-            self.cmd_forward(500, 'slow')
-            time.sleep(2)
-            self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['plant'] #bottom
-            self.move_elevator(250)            
-            time.sleep(0.5)
-            self.close_pince()
+            self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['plant'] #top
             
             if request.param == "":
                 self.get_logger().info(f"params default")
