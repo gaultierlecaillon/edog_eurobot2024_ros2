@@ -3,24 +3,47 @@
   "name": "start_yellow.json",
   "description": "start Yellow, opening solr",
   "color": "yellow",
-  "startingPos": "225,1775,180",
+  "startingPos": "150,1775,180",
   "timer": "100",
   "strategy": [
     {
       "name": "Starting Blocks",
       "actions": [
-        { "calibrate": "True" }
+        { "calibrate": "True" },
+        { "waiting_tirette": true },
+        { "waiting_tirette": false }
       ]
     },
     {
-      "name": "Opening",
+      "name": "Solar panels",
       "actions": [
+        { "arm": "open" },
         { "forward": "-600" },
-        { "goto": "1180,1630,-1" },
-        { "graber": "" },
-        { "forward": "-100" },
-        { "goto": "1214,1442,-1" },
-        { "depose": "250,1750,180" }
+        { "arm": "close" }
+      ]
+    },
+    {
+      "name": "Grab 1st plants",
+      "actions": [
+        { "goto": "1160,1630,-1" },
+        { "grab": "" },
+        { "forward": "-200" }
+      ]
+    },
+    {
+      "name": "Grab 2nd plants",
+      "actions": [
+        { "goto": "1214,1420,-1" },
+        { "grab": "" },
+        { "forward": "-200" }
+      ]
+    },
+    {
+      "name": "Depose 1 and 2 stage",
+      "actions": [
+        { "goto": "250,1700,180" },
+        { "depose": "" },
+        { "depose": "" }
       ]
     }
   ]

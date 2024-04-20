@@ -1,46 +1,39 @@
 {
   "pince": {
     "motor0": {
-      "close": 6,
-      "open": 80,
-      "extend": 100,
-      "tight": 50
+      "close": 10,
+      "open": 90,
+      "extend": 130
     },
     "motor1": {
-      "close": 162,
-      "open": 88,
-      "extend": 68,
-      "tight": 118
+      "close": 172,
+      "open": 93,
+      "extend": 68
     }
   },
   "graber": {
     "motor2": {
-      "close": 33,
-      "open": 126,
-      "plant": 50
+      "close": 40,
+      "open": 138,
+      "plant": 55
     },
     "motor3": {
-      "close": 90,
-      "open": 22,
+      "close": 95,
+      "semi-close": 90,
+      "open": 27,
       "plant": 40
     }
   },
   "solarpanel": {
     "motor4": {
-      "open": 175,
-      "low": 165,
-      "close": 108
-    },
-    "motor5": {
-      "default": 85,
-      "yellow": 50,
-      "blue": 115
-    }    
+      "open": 70,
+      "close": 180 
+    }   
   },
   "elevator": {
-      "up": 500,
+      "up": 480,
       "down": 0,
-      "level1": 120,
+      "plant": 90,
       "jardiniere": 450
   }
 }
