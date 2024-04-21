@@ -15,7 +15,7 @@
     "motor2": {
       "close": 40,
       "open": 138,
-      "plant": 55
+      "plant": 65
     },
     "motor3": {
       "close": 95,
@@ -30,10 +30,11 @@
       "close": 180 
     }   
   },
-  "elevator": {
-      "up": 480,
+  "elevator": {      
       "down": 0,
+      "depose": 50,
       "plant": 90,
-      "jardiniere": 450
+      "jardiniere": 450,
+      "up": 450
   }
 }

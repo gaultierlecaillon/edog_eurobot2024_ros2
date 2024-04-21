@@ -103,7 +103,8 @@ class IANode(Node):
                     exit(1)
         else:
             self.get_logger().info(
-                "\033[38;5;208m[Match done] No more actions to exec\n\n\t\t\t (⌐■_■) 𝘪𝘴 𝘪𝘵 𝘗1 ?\033[0m\n")            
+                "\033[38;5;208m[Match done] No more actions to exec\n\n\t\t\t (⌐■_■) 𝘪𝘴 𝘪𝘵 𝘗1 ?\033[0m\n")    
+            self.speak("job-finish.mp3")        
             self.shutdown_nodes()
 
     def is_motion_complete_callback(self, msg):
@@ -125,6 +126,7 @@ class IANode(Node):
             lambda msg: self.callback_waiting_tirette(msg, param), 1)
         if param:
             self.get_logger().info(f"\033[95m[⏳ WAITING ⏳] Waiting for tirette\033[0m")
+            self.speak("ready.mp3")
         else:
             self.get_logger().info(f"\033[95m[⏳ WAITING ⏳] Pull the tirette and the match will start for {self.shutdown_after_seconds}s 🏁\033[0m")
 
@@ -137,10 +139,10 @@ class IANode(Node):
             if not param: # The tirette have been pulled, the Match start
                 # Match timer
                 self.match_timer = self.create_timer(self.shutdown_after_seconds, self.shutdown_nodes)
+                self.speak("big_d.mp3")
             
             self.update_current_action_status('done')
             self.destroy_subscription(self.subscriber_)  # Unsubscribe from the topic
-
 
     def calibrate(self, param):
         service_name = "cmd_calibration_service"
@@ -196,12 +198,6 @@ class IANode(Node):
         self.get_logger().info(f"[Publish] {request} to {service_name}")
     
     def depose(self, param):
-        #self.actions_dict.insert(0, {
-        #            'action': {'goto': param},
-        #            'status': 'pending'
-        #        })
-        
-        #self.goto(param);
         service_name = "cmd_depose_top_service"
         self.get_logger().info(f"Performing 'Depose' action with param: {param}")
         client = self.create_client(CmdActuatorService, service_name)

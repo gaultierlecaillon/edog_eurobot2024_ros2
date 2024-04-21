@@ -141,7 +141,7 @@ class ActuatorService(Node):
         self.get_logger().info(f"depose_top_callback Called : received={request.param}")
         try:         
             if self.grabber_bottom_loaded:  # both loaded => drop bottom
-                step = self.actuator_config['elevator']['plant']
+                step = self.actuator_config['elevator']['depose']
                 self.move_elevator(step)
                 self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']
                 time.sleep(0.5)                
@@ -153,7 +153,7 @@ class ActuatorService(Node):
                 
             elif not self.grabber_bottom_loaded and self.grabber_top_loaded: # only top loaded => drop both                
                 self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']
-                step = self.actuator_config['elevator']['plant']
+                step = self.actuator_config['elevator']['depose']
                 self.move_elevator(step)
                 self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['open']
                 time.sleep(1) 
@@ -196,7 +196,9 @@ class ActuatorService(Node):
                 response.success = True
             elif not self.grabber_bottom_loaded and self.grabber_top_loaded: # 1 stack of plants loaded
                 self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open'] # bottom
-                time.sleep(0.2)
+                step = self.actuator_config['elevator']['plant']
+                self.move_elevator(step)
+                time.sleep(0.1)
                 self.cmd_forward(400, 'slow')
                 time.sleep(2.5)
                 self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['plant'] # bottom
@@ -312,6 +314,7 @@ class ActuatorService(Node):
         time.sleep(0.5)
 
     def initServo(self):
+        self.kit.servo[4].angle = self.actuator_config['solarpanel']['motor4']['close']
         self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['close']
         time.sleep(0.25)
         self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['close']        

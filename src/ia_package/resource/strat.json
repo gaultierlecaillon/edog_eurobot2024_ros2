@@ -43,7 +43,8 @@
       "actions": [
         { "goto": "250,1700,180" },
         { "depose": "" },
-        { "depose": "" }
+        { "depose": "" },
+        { "rotate": "135" }
       ]
     }
   ]
