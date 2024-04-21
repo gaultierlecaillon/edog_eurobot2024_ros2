@@ -46,6 +46,10 @@ class MotionService(Node):
         'emergency': False,
         'evitement': True,
     }
+    
+    # emergency stop var
+    obstacle_confirmation = 0
+    clear_confirmation = 0
 
     last_callback_service_requester = ""
 
@@ -53,8 +57,11 @@ class MotionService(Node):
         super().__init__("motion_service")
 
         self.calibration_config = None
+        self.default_odrive_config = None
+        self.emergency_odrive_config = None
         self.odrv0 = None
         self.loadCalibrationConfig()
+        self.loadMotorsConfig()
 
         ''' Publisher '''
         if not hasattr(self, 'voice_publisher'):
@@ -130,12 +137,19 @@ class MotionService(Node):
     def loadCalibrationConfig(self):
         with open('/home/edog/ros2_ws/src/control_package/resource/calibration.json') as file:
             config = json.load(file)
-        self.get_logger().info(f"[Loading Calibration Config] caibration.json")
+        self.get_logger().info(f"[Loading Calibration Config] calibration.json")
 
         self.calibration_config = config['calibration']
         self.calibration_config["rotation"]["coef"] = self.calibration_config["rotation"]["mm"] / self.calibration_config["rotation"]["deg"]
         self.calibration_config["linear"]["coef"] = self.calibration_config["linear"]["pos"] / self.calibration_config["linear"]["mm"]
         print("self.calibration_config", self.calibration_config)
+        
+    def loadMotorsConfig(self):
+        with open('/home/edog/ros2_ws/src/control_package/resource/default_odrive_config.json') as file:
+            self.default_odrive_config = json.load(file)
+        
+        with open('/home/edog/ros2_ws/src/control_package/resource/emergency_odrive_config.json') as file:
+            self.emergency_odrive_config = json.load(file)
 
     def calibration_callback(self, request, response):
 
@@ -163,8 +177,8 @@ class MotionService(Node):
             self.odrv0.axis0.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
             self.odrv0.axis1.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
 
-        self.setPID("odrive_config.json")
-        self.setPIDGains("odrive_config.json")
+        self.setPID("default_odrive_config")
+        self.setPIDGains("default_odrive_config")
 
         self.x_ = request.start_position.x
         self.y_ = request.start_position.y
@@ -183,9 +197,9 @@ class MotionService(Node):
             if self.current_motion['type'] == "forward":
                 pos = Position()
                 x_mm = (self.odrv0.axis0.encoder.pos_estimate - self.pos_estimate_0) / \
-                       self.calibration_config["linear"]["coef"]
+                        self.calibration_config["linear"]["coef"]
                 y_mm = (self.odrv0.axis1.encoder.pos_estimate - self.pos_estimate_1) / \
-                       self.calibration_config["linear"]["coef"]
+                        self.calibration_config["linear"]["coef"]
 
                 new_x = x_mm * math.cos(math.radians(self.r_)) + self.x_
                 new_y = y_mm * math.sin(math.radians(self.r_)) + self.y_
@@ -195,23 +209,23 @@ class MotionService(Node):
                 pos.r = float(self.r_)
                 self.publisher_pos.publish(pos)
 
-            if msg.data and not self.current_motion['emergency'] and self.current_motion['target_position_0'] == \
-                    self.current_motion['target_position_1']:
-                self.setPID("emergency_stop.json")
-                self.setPIDGains("emergency_stop.json")
-                self.odrv0.axis0.controller.input_pos = self.odrv0.axis0.encoder.pos_estimate
-                self.odrv0.axis1.controller.input_pos = self.odrv0.axis1.encoder.pos_estimate
-                self.get_logger().error(f"\033[91mObstacle in front of the robot. Stopped @ input_pos_0={self.odrv0.axis0.encoder.pos_estimate} and input_pos_1={self.odrv0.axis1.encoder.pos_estimate}\033[0m")
-                self.current_motion['emergency'] = True
-                self.current_motion['in_motion'] = False
-                self.speak("emergency_stop.mp3")
-                time.sleep(1)
-                self.setPID("odrive_config.json")
-                self.setPIDGains("odrive_config.json")
+                if msg.data and not self.current_motion['emergency']:
+                    self.setPID("emergency_odrive_config")
+                    self.setPIDGains("emergency_odrive_config")
+                    self.odrv0.axis0.controller.input_pos = self.odrv0.axis0.encoder.pos_estimate
+                    self.odrv0.axis1.controller.input_pos = self.odrv0.axis1.encoder.pos_estimate
+                    self.get_logger().error(f"\033[91mObstacle in front of the robot. Stopped @ input_pos_0={self.odrv0.axis0.encoder.pos_estimate} and input_pos_1={self.odrv0.axis1.encoder.pos_estimate}\033[0m")
+                    self.current_motion['emergency'] = True
+                    self.current_motion['in_motion'] = False
+                    self.speak("emergency_stop.mp3")                
+                    self.setPID("default_odrive_config")
+                    self.setPIDGains("default_odrive_config")
+                    time.sleep(1)
 
             self.is_motion_complete()
 
-        if not msg.data and self.current_motion['emergency']:
+        if not msg.data and self.current_motion['emergency']:      
+            self.get_logger().info("No more obstacle !")      
             time.sleep(1)
             pos_error_0 = abs(
                 self.pos_estimate_0 + self.current_motion['target_position_0'] - self.odrv0.axis0.encoder.pos_estimate)
@@ -228,8 +242,9 @@ class MotionService(Node):
 
             self.motionForward(pos_error_mm)
             self.current_motion['emergency'] = False
+            self.clear_confirmation = 0
         elif msg.data and self.current_motion['emergency']:
-            print("waiting for the obstacle to move")
+            self.get_logger().info("Waiting for the obstacle to move")
 
     #
     # Distance to do in mm
@@ -240,10 +255,10 @@ class MotionService(Node):
         if request.mode == 'slow':
             print("mode slow")
             # do something
-
-        self.motionForward(request.distance_mm)
+        
         self.x_target = self.x_ + round(request.distance_mm * math.cos(math.radians(self.r_)), 2)
         self.y_target = self.y_ + round(request.distance_mm * math.sin(math.radians(self.r_)), 2)
+        self.motionForward(request.distance_mm)
 
         self.last_callback_service_requester = str(request.service_requester)
         response.motion_completed_response.service_requester = request.service_requester
@@ -340,8 +355,12 @@ class MotionService(Node):
 
         if target_position_0 == target_position_1:
             type = "forward"
-        else:
+        elif target_position_0 == - target_position_1:
             type = "rotation"
+        else:
+            self.get_logger().error(f'\033[91m[Motion Type Unknown] target_position_0={target_position_0} and target_position_1={target_position_1}\033[0m')
+            response.success = False
+            return response
 
         self.get_logger().info("Motion has begun !");
 
@@ -421,9 +440,13 @@ class MotionService(Node):
         self.odrv0.axis1.encoder.set_linear_count(0)
 
     def setPIDGains(self, config_filename):
-        with open('/home/edog/ros2_ws/src/control_package/resource/' + config_filename) as file:
-            config = json.load(file)
-        self.get_logger().info(f"[Loading Odrive Config] odrive_config.json")
+        self.get_logger().info(f"[Loading Odrive Config] {config_filename}.json")
+        
+        if config_filename == "emergency_odrive_config":
+            config = self.emergency_odrive_config
+        else:
+            config = self.default_odrive_config
+        
 
         gain = config['gain']
         vel_gain = config['vel_gain']
@@ -439,9 +462,12 @@ class MotionService(Node):
         self.odrv0.axis1.controller.config.vel_integrator_gain = vel_integrator_gain  # Velocity integrator gain for axis1
 
     def setPID(self, config_filename):
-        with open('/home/edog/ros2_ws/src/control_package/resource/' + config_filename) as file:
-            config = json.load(file)
-        self.get_logger().info(f"[Loading Odrive Config] odrive_config.json")
+        self.get_logger().info(f"[Loading Odrive Config] {config_filename}.json")
+        
+        if config_filename == "emergency_odrive_config":
+            config = self.emergency_odrive_config
+        else:
+            config = self.default_odrive_config
 
         accel_limit = config['accel_limit']
         decel_limit = config['decel_limit']

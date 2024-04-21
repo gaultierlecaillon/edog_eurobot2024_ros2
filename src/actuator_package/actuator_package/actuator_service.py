@@ -91,7 +91,7 @@ class ActuatorService(Node):
     def publish_pid(self):
         msg = Int32()
         msg.data = os.getpid()  # Get the current process ID
-        self.get_logger().error(f'\033[91m[publish_pid] {msg.data}\033[0m')
+        #self.get_logger().error(f'\033[91m[publish_pid] {msg.data}\033[0m')
         self.pid_publisher.publish(msg)
 
     def motion_complete_callback(self, msg):

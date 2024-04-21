@@ -3,7 +3,7 @@
   "name": "MatchBlue",
   "description": "Main strategy for blue color",
   "color": "blue",
-  "startingPos": "0,0,0",
+  "startingPos": "250,1750,0",
   "strategy": [
     {
       "name": "Starting Blocks",
@@ -14,8 +14,9 @@
     {
       "name": "Opening",
       "actions": [
-        { "forward": "1000" },
-        { "forward": "-1000" }
+        { "forward": "500" },
+        { "goto": "500,1000,130" },
+        { "forward": "500" }
       ]
     }
   ]

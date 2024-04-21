@@ -412,7 +412,7 @@ class IANode(Node):
 
     def kill_callback(self, msg):
         self.pids.append(msg.data)
-        self.get_logger().error(f'\033[91mReceived PIDs: {self.pids}\033[0m')        
+        #self.get_logger().error(f'\033[91m[received_pid] {self.pids}\033[0m')        
 
     def kill_all(self):        
         self.get_logger().error('\033[91mKILL THEM ALL !\033[0m')
