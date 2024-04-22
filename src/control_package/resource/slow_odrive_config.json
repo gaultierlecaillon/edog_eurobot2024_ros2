@@ -1,0 +1,8 @@
+{   
+   "gain":"30",
+   "vel_gain":"0.1",
+   "vel_integrator_gain":"0.05",
+   "accel_limit":"10",
+   "decel_limit":"10",
+   "vel_limit":"15"
+}

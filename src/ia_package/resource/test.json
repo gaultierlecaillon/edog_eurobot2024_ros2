@@ -15,8 +15,9 @@
     {
       "name": "Opening",
       "actions": [
-        { "grab": "" },
         { "forward": "200" },
+        { "grab": "" },
+        { "forward": "-200" },
         { "depose": "" }
       ]
     }

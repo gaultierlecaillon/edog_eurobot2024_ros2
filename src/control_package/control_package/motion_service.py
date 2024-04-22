@@ -34,6 +34,7 @@ class MotionService(Node):
     y_target = 0
     pos_estimate_0 = 0
     pos_estimate_1 = 0
+    mode = 'normal'
 
     target_0 = 0
     target_1 = 0
@@ -111,15 +112,15 @@ class MotionService(Node):
 
     def check_odrive_connection(self):
         try:
-            start_time = time.time()
+            #start_time = time.time()
             odrv_tmp = odrive.find_any(timeout=0.1)
-            end_time = time.time()
-            duration = (end_time - start_time)
+            #end_time = time.time()
+            #duration = (end_time - start_time)
             #self.get_logger().info(f"The execution took {duration} s")
 
+            # Publish a message on 'bau_topic' if connection is lost
             if odrv_tmp is None:
-                self.get_logger().info("ODrive connection lost.")
-                # Publish a message on 'bau_topic' if connection is lost
+                self.get_logger().info("ODrive connection lost.")                
                 msg = Bool()
                 msg.data = True
                 self.bau_publisher.publish(msg)
@@ -149,6 +150,9 @@ class MotionService(Node):
         
         with open('/home/edog/ros2_ws/src/control_package/resource/emergency_odrive_config.json') as file:
             self.emergency_odrive_config = json.load(file)
+            
+        with open('/home/edog/ros2_ws/src/control_package/resource/slow_odrive_config.json') as file:
+            self.slow_odrive_config = json.load(file)
 
     def calibration_callback(self, request, response):
 
@@ -256,13 +260,23 @@ class MotionService(Node):
     def forward_callback(self, request, response):
         self.get_logger().info(f"Cmd forward_callback received: {request}")
         
-        if request.mode == 'slow':
-            print("mode slow")
-            # do something
+        if request.mode == 'normal' and self.mode != 'normal':
+            self.setPID("normal_odrive_config")
+            self.setPIDGains("normal_odrive_config")  
+            self.mode = 'normal'         
+        elif request.mode == 'slow' and self.mode != 'slow':
+            self.setPID("slow_odrive_config")
+            self.setPIDGains("slow_odrive_config")
+            self.mode = 'slow'
+            
         
         self.x_target = self.x_ + round(request.distance_mm * math.cos(math.radians(self.r_)), 2)
         self.y_target = self.y_ + round(request.distance_mm * math.sin(math.radians(self.r_)), 2)
         self.motionForward(request.distance_mm)
+        if request.mode == 'slow':
+            time.sleep(request.distance_mm/150)
+            self.setPID("slow_odrive_config")
+            self.setPIDGains("slow_odrive_config")
 
         self.last_callback_service_requester = str(request.service_requester)
         response.motion_completed_response.service_requester = request.service_requester
@@ -470,6 +484,8 @@ class MotionService(Node):
         
         if config_filename == "emergency_odrive_config":
             config = self.emergency_odrive_config
+        elif config_filename == "slow_odrive_config":
+            config = self.slow_odrive_config
         else:
             config = self.default_odrive_config
         
@@ -492,6 +508,8 @@ class MotionService(Node):
         
         if config_filename == "emergency_odrive_config":
             config = self.emergency_odrive_config
+        elif config_filename == "slow_odrive_config":
+            config = self.slow_odrive_config
         else:
             config = self.default_odrive_config
 
