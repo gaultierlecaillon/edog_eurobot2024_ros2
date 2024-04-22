@@ -222,7 +222,7 @@ class MotionService(Node):
                     self.setPID("default_odrive_config")
                     self.setPIDGains("default_odrive_config")
 
-            self.is_motion_complete()
+        self.is_motion_complete()
             
             
 
@@ -381,10 +381,9 @@ class MotionService(Node):
 
     def is_motion_complete(self):
         motion_completed = False
+        timeout = self.config["robot"]["is_motion_complete_timeout_s"]
 
         if self.current_motion['in_motion']:
-            timeout = 5
-
             pos_error_0 = abs(
                 self.pos_estimate_0 + self.current_motion['target_position_0'] - self.odrv0.axis0.encoder.pos_estimate)
             pos_error_1 = abs(
@@ -400,12 +399,18 @@ class MotionService(Node):
                     f"\033[38;5;46mMotion completed in {time.time() - self.current_motion['start']:.3f} seconds (pos_error_0:{pos_error_0}, pos_error_1:{pos_error_1}\033[0m")
                 motion_completed = True
 
-            elif time.time() - self.current_motion['start'] > timeout:
+            elif time.time() - self.current_motion['start'] > timeout and not self.current_motion['emergency']:
                 error_message = f"Motion completion timeout (pos_error_0: {pos_error_0}, pos_error_1: {pos_error_1})"
                 self.get_logger().error(f'\033[91m{error_message}\033[0m')
 
                 self.print_robot_infos()
                 motion_completed = False
+        if self.current_motion['start'] and time.time() - self.current_motion['start'] > timeout and self.current_motion['emergency']:
+            error_message = f"Robot blocked for more than {timeout}"
+            self.get_logger().error(f'\033[91m{error_message}\033[0m')
+
+            # try to give space
+            #self.cmd_forward(-100, 'slow') # provoque bug, complete the action ? then nothing happen          
 
             '''
             self.get_logger().info(
@@ -435,6 +440,22 @@ class MotionService(Node):
             self.print_robot_infos()
 
         return motion_completed
+    
+    def cmd_forward(self, distance_mm, mode='normal'):
+        service_name = "cmd_forward_service"
+
+        self.get_logger().info(f"[Exec Action] forward of: {distance_mm}mm")
+        client = self.create_client(CmdForwardService, service_name)
+        while not client.wait_for_service(1):
+            self.get_logger().warn(f"Waiting for Server {service_name} to be available...")
+
+        request = CmdForwardService.Request()
+        request.service_requester = self.__class__.__name__
+        request.distance_mm = int(distance_mm)
+        request.mode = mode
+        client.call_async(request)
+
+        self.get_logger().info(f"[Publish] {request} to {service_name}")
 
     def getEncoderIndex(self, axis):
         return axis.encoder.shadow_count
@@ -537,7 +558,7 @@ class MotionService(Node):
         msg = String()
         msg.data = str(action)
         self.voice_publisher.publish(msg)
-        self.get_logger().info(f"[Publish topic] voice_topic msg:{msg}")
+        #self.get_logger().info(f"[Publish topic] voice_topic msg:{msg}")
 
 def main(args=None):
     rclpy.init(args=args)

@@ -2,7 +2,7 @@
    "gain":"40",
    "vel_gain":"0.1666666716337204",
    "vel_integrator_gain":"0.08333333581",
-   "accel_limit":"20",
-   "decel_limit":"50",
+   "accel_limit":"50",
+   "decel_limit":"100",
    "vel_limit":"100"
 }

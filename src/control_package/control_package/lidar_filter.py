@@ -135,7 +135,7 @@ class LidarFilter(Node):
                         and -0.3 < dist_y < 0.3 \
                         and 200 < x_obstacle < 2800 \
                         and 200 < y_obstacle < 1800:
-                    self.get_logger().info(f"👮 Obstacle ! dist_x:={round(dist_x,2)}m, dist_y={round(dist_y,2)}m; Ostacle Position ({round(x_obstacle)}, {round(y_obstacle)})")
+                    #self.get_logger().info(f"👮 Obstacle ! dist_x:={round(dist_x,2)}m, dist_y={round(dist_y,2)}m; Ostacle Position ({round(x_obstacle)}, {round(y_obstacle)})")
                     emergency_stop_msg.data = True
                     self.emergency_stop_publisher_.publish(emergency_stop_msg)                    
                     return

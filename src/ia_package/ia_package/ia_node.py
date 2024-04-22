@@ -112,7 +112,7 @@ class IANode(Node):
         self.get_logger().info(f"\033[38;5;208m[motion_complete_callback] Received in IAService: {msg} for {action_name}\033[0m")
 
         if msg.success and msg.service_requester == str(self.__class__.__name__):
-            if action_name == 'grab' or action_name == 'depose':
+            if action_name == 'grab' or action_name == 'depose' or action_name == 'is_motion_complete':
                 self.get_logger().info(f"\033[38;5;208mIgnore this motion complete {action_name}\033[0m")
                 pass
             else:
@@ -384,7 +384,7 @@ class IANode(Node):
         msg = String()
         msg.data = str(action)
         self.voice_publisher.publish(msg)
-        self.get_logger().info(f"[Publish topic] voice_topic msg:{msg}")
+        #self.get_logger().info(f"[Publish topic] voice_topic msg:{msg}")
 
     '''
     Shutdown the node at the end of the Match
