@@ -8,14 +8,10 @@ from robot_interfaces.msg import Position
 from std_msgs.msg import Bool
 import numpy
 import math
+import json
 
 # Led
-import board
-import neopixel
 from random import randint
-
-from rclpy.qos import QoSProfile
-from rclpy.executors import MultiThreadedExecutor
 
 
 class LidarFilter(Node):
@@ -117,8 +113,8 @@ class LidarFilter(Node):
 
     def check_emergency_stop(self, angle_ranges):
         emergency_stop_msg = Bool()
-        for index, distance in enumerate(angle_ranges):
-            emergency_stop_msg.data = False
+        emergency_stop_msg.data = False
+        for index, distance in enumerate(angle_ranges):            
             if self.max_distance > distance > self.min_distance:
                 index_offset = (index + 900) % 1800
                 angle = int(360 - index_offset / 5)
@@ -148,10 +144,9 @@ class LidarFilter(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    emergency_distance = 0.6  # distance in m
-    min_distance = 0.2  # distance in m
-    max_distance = 2.0  # distance in m
-    node = LidarFilter(max_distance, min_distance, emergency_distance)
+    with open('/home/edog/ros2_ws/src/control_package/resource/robot_config.json') as file:
+            config = json.load(file)
+    node = LidarFilter(config['robot']['emergency_distance'], config['robot']['min_distance'], config['robot']['max_distance'])
 
     rclpy.spin(node)
     rclpy.shutdown()

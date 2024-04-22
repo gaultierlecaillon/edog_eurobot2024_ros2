@@ -25,7 +25,7 @@ import math
 
 class MotionService(Node):
     cpr = 8192
-    cpr_error_tolerance = 0.02
+    cpr_error_tolerance = 0.1
 
     x_ = 0  # Current robot x position
     y_ = 0  # Current robot y position
@@ -56,11 +56,11 @@ class MotionService(Node):
     def __init__(self):
         super().__init__("motion_service")
 
-        self.calibration_config = None
+        self.config = None
         self.default_odrive_config = None
         self.emergency_odrive_config = None
         self.odrv0 = None
-        self.loadCalibrationConfig()
+        self.loadRobotConfig()
         self.loadMotorsConfig()
 
         ''' Publisher '''
@@ -133,16 +133,15 @@ class MotionService(Node):
             self.shutdown_node()
 
 
-    
-    def loadCalibrationConfig(self):
-        with open('/home/edog/ros2_ws/src/control_package/resource/calibration.json') as file:
+    def loadRobotConfig(self):
+        with open('/home/edog/ros2_ws/src/control_package/resource/robot_config.json') as file:
             config = json.load(file)
-        self.get_logger().info(f"[Loading Calibration Config] calibration.json")
+        self.get_logger().info(f"[Loading Calibration Config] robot_config.json")
 
-        self.calibration_config = config['calibration']
-        self.calibration_config["rotation"]["coef"] = self.calibration_config["rotation"]["mm"] / self.calibration_config["rotation"]["deg"]
-        self.calibration_config["linear"]["coef"] = self.calibration_config["linear"]["pos"] / self.calibration_config["linear"]["mm"]
-        print("self.calibration_config", self.calibration_config)
+        self.config = config
+        self.config["calibration"]["rotation"]["coef"] = self.config["calibration"]["rotation"]["mm"] / self.config["calibration"]["rotation"]["deg"]
+        self.config["calibration"]["linear"]["coef"] = self.config["calibration"]["linear"]["pos"] / self.config["calibration"]["linear"]["mm"]
+        self.cpr_error_tolerance = self.config["robot"]["cpr_error_tolerance"]
         
     def loadMotorsConfig(self):
         with open('/home/edog/ros2_ws/src/control_package/resource/default_odrive_config.json') as file:
@@ -193,13 +192,14 @@ class MotionService(Node):
         return response
 
     def emergency_stop_callback(self, msg):
+        #self.get_logger().info(f"msg.data: {msg.data}, self.current_motion['emergency']:{self.current_motion['emergency']}, self.clear_confirmation:{self.clear_confirmation}")      
         if self.current_motion['in_motion']:
             if self.current_motion['type'] == "forward":
                 pos = Position()
                 x_mm = (self.odrv0.axis0.encoder.pos_estimate - self.pos_estimate_0) / \
-                        self.calibration_config["linear"]["coef"]
+                        self.config["calibration"]["linear"]["coef"]
                 y_mm = (self.odrv0.axis1.encoder.pos_estimate - self.pos_estimate_1) / \
-                        self.calibration_config["linear"]["coef"]
+                        self.config["calibration"]["linear"]["coef"]
 
                 new_x = x_mm * math.cos(math.radians(self.r_)) + self.x_
                 new_y = y_mm * math.sin(math.radians(self.r_)) + self.y_
@@ -217,22 +217,23 @@ class MotionService(Node):
                     self.get_logger().error(f"\033[91mObstacle in front of the robot. Stopped @ input_pos_0={self.odrv0.axis0.encoder.pos_estimate} and input_pos_1={self.odrv0.axis1.encoder.pos_estimate}\033[0m")
                     self.current_motion['emergency'] = True
                     self.current_motion['in_motion'] = False
-                    self.speak("emergency_stop.mp3")                
+                    self.speak("emergency_stop.mp3") 
+                    time.sleep(2)               
                     self.setPID("default_odrive_config")
                     self.setPIDGains("default_odrive_config")
-                    time.sleep(1)
 
             self.is_motion_complete()
+            
+            
 
-        if not msg.data and self.current_motion['emergency']:      
-            self.get_logger().info("No more obstacle !")      
-            time.sleep(1)
+        if not msg.data and self.current_motion['emergency'] and self.clear_confirmation >= 5 :      
+            self.get_logger().info("No more obstacle !")        
             pos_error_0 = abs(
                 self.pos_estimate_0 + self.current_motion['target_position_0'] - self.odrv0.axis0.encoder.pos_estimate)
             pos_error_1 = abs(
                 self.pos_estimate_1 + self.current_motion['target_position_1'] - self.odrv0.axis1.encoder.pos_estimate)
 
-            pos_error_mm = ((pos_error_0 + pos_error_1) / 2) / self.calibration_config["linear"]["coef"]
+            pos_error_mm = ((pos_error_0 + pos_error_1) / 2) / self.config["calibration"]["linear"]["coef"]
             self.pos_estimate_0 = self.odrv0.axis0.encoder.pos_estimate
             self.pos_estimate_1 = self.odrv0.axis1.encoder.pos_estimate
 
@@ -243,6 +244,9 @@ class MotionService(Node):
             self.motionForward(pos_error_mm)
             self.current_motion['emergency'] = False
             self.clear_confirmation = 0
+        elif not msg.data and self.current_motion['emergency'] and self.clear_confirmation < 5 :
+            self.clear_confirmation += 1
+            self.get_logger().info(f"Waiting for confirmation {self.clear_confirmation}")
         elif msg.data and self.current_motion['emergency']:
             self.get_logger().info("Waiting for the obstacle to move")
 
@@ -310,8 +314,8 @@ class MotionService(Node):
     def motionRotate(self, target_angle):
         try:
             rotation_to_do = self.r_ + target_angle
-            increment_mm = target_angle * self.calibration_config["rotation"]["coef"]
-            increment_pos = increment_mm * self.calibration_config["linear"]["coef"]
+            increment_mm = target_angle * self.config["calibration"]["rotation"]["coef"]
+            increment_pos = increment_mm * self.config["calibration"]["linear"]["coef"]
 
             self.get_logger().warn(f"[MotionRotate] target_angle={target_angle}°, rotation_to_do={rotation_to_do}°")
 
@@ -325,7 +329,7 @@ class MotionService(Node):
 
     def motionForward(self, increment_mm):
         try:
-            increment_pos = float(self.calibration_config["linear"]["coef"]) * increment_mm
+            increment_pos = float(self.config["calibration"]["linear"]["coef"]) * increment_mm
 
             self.get_logger().warn(f"[MotionForward] (increment_mm={increment_mm} mm, increment_pos={increment_pos} pos)")
 
@@ -347,6 +351,7 @@ class MotionService(Node):
         request.target_position_1 = increment_pos_1
         request.evitement = True
         client.call_async(request)
+        self.current_motion['start'] = time.time()
         self.get_logger().info(f"[Publish] {request} to {service_name}")
 
     def motion_has_started(self, request, response):

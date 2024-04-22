@@ -1,0 +1,20 @@
+{
+  "robot": {
+    "deceleration_distance_mm":"50",
+    "emergency_distance": 0.6,
+    "min_distance": 0.2,
+    "max_distance": 2.0,
+    "is_motion_complete_timeout_s": 5,
+    "cpr_error_tolerance": 0.1
+  },
+  "calibration": {
+    "linear": {
+      "pos": 50,
+      "mm": 1265
+    },
+    "rotation": {
+      "deg": 360,
+      "mm": 860
+    }
+  }
+}

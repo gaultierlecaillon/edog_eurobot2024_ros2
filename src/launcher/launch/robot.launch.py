@@ -14,12 +14,6 @@ def generate_launch_description():
         name="tirette_publisher"
     )
 
-    led_service = Node(
-        package="hardware_package",
-        executable="led_service",
-        name="led_service"
-    )
-
     lidar_publisher = Node(
         package="control_package",
         executable="lidar_filter",
@@ -52,7 +46,6 @@ def generate_launch_description():
     )
 
     ld.add_action(tirette_publisher)
-    ld.add_action(led_service)
     ld.add_action(lidar_publisher)
     ld.add_action(motion_service)
     ld.add_action(actuator_service)
