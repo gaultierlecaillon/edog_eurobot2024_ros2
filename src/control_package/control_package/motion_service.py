@@ -151,44 +151,50 @@ class MotionService(Node):
             self.emergency_odrive_config = json.load(file)
 
     def calibration_callback(self, request, response):
+        try:
+            # Find a connected ODrive (this will block until you connect one)
+            self.connect_to_odrive()       
 
-        # Find a connected ODrive (this will block until you connect one)
-        self.connect_to_odrive()       
+            if self.is_in_closed_loop_control():
+                self.disable_motor_loop_control()
+                # Loop Control
+                self.reset_encoders()
+                self.odrv0.axis0.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
+                self.odrv0.axis1.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
 
-        if self.is_in_closed_loop_control():
-            self.disable_motor_loop_control()
-            # Loop Control
-            self.reset_encoders()
-            self.odrv0.axis0.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
-            self.odrv0.axis1.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
+                self.get_logger().warn(f"Robot already in closed loop control")
+            else:
+                self.get_logger().info(f"Starting calibration...")
+                self.odrv0.axis0.requested_state = AXIS_STATE_FULL_CALIBRATION_SEQUENCE
+                self.odrv0.axis1.requested_state = AXIS_STATE_FULL_CALIBRATION_SEQUENCE
 
-            self.get_logger().warn(f"Robot already in closed loop control")
-        else:
-            self.get_logger().info(f"Starting calibration...")
-            self.odrv0.axis0.requested_state = AXIS_STATE_FULL_CALIBRATION_SEQUENCE
-            self.odrv0.axis1.requested_state = AXIS_STATE_FULL_CALIBRATION_SEQUENCE
+                while self.odrv0.axis0.current_state != AXIS_STATE_IDLE and self.odrv0.axis1.current_state != AXIS_STATE_IDLE:
+                    time.sleep(0.1)
 
-            while self.odrv0.axis0.current_state != AXIS_STATE_IDLE and self.odrv0.axis1.current_state != AXIS_STATE_IDLE:
-                time.sleep(0.1)
+                # Loop Control
+                self.reset_encoders()
+                self.odrv0.axis0.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
+                self.odrv0.axis1.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
 
-            # Loop Control
-            self.reset_encoders()
-            self.odrv0.axis0.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
-            self.odrv0.axis1.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
+            self.setPID("default_odrive_config")
+            self.setPIDGains("default_odrive_config")
 
-        self.setPID("default_odrive_config")
-        self.setPIDGains("default_odrive_config")
+            self.x_ = request.start_position.x
+            self.y_ = request.start_position.y
+            self.r_ = request.start_position.r   
+            self.get_logger().info(f"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")  
+            self.print_robot_infos()
 
-        self.x_ = request.start_position.x
-        self.y_ = request.start_position.y
-        self.r_ = request.start_position.r
+            self.pos_estimate_0 = 0
+            self.pos_estimate_1 = 0
 
-        self.pos_estimate_0 = 0
-        self.pos_estimate_1 = 0
-
-        self.connection_check_timer = self.create_timer(1, self.check_odrive_connection)
-        response.success = True
-        time.sleep(0.2)
+            self.connection_check_timer = self.create_timer(1, self.check_odrive_connection)
+            response.success = True
+            time.sleep(1)        
+        except Exception as e:
+            self.get_logger().error(f"Failed to execute calibration_callback: {e}")
+            response.success = False
+            
         return response
 
     def emergency_stop_callback(self, msg):
@@ -415,8 +421,9 @@ class MotionService(Node):
             '''
 
         if motion_completed:
-            self.x_ = self.x_target
-            self.y_ = self.y_target
+            if self.current_motion['type'] == 'forward':
+                self.x_ = self.x_target
+                self.y_ = self.y_target
 
             # Publish True on the 'is_motion_complete' topic
             msg = MotionCompleteResponse()
@@ -514,7 +521,7 @@ class MotionService(Node):
 
     def print_robot_infos(self):
         self.get_logger().info(
-            f"[Robot Infos] x:{self.x_}, y:{self.y_}, r:{self.r_}, encoder_0_index: {self.getEncoderIndex(self.odrv0.axis0)}, encoder_1_index:{self.getEncoderIndex(self.odrv0.axis1)}")
+            f"\033[95m[Robot Infos] x:{self.x_}, y:{self.y_}, r:{self.r_}, encoder_0_index: {self.getEncoderIndex(self.odrv0.axis0)}, encoder_1_index:{self.getEncoderIndex(self.odrv0.axis1)}\033[0m")
 
     def connect_to_odrive(self):
         try:
