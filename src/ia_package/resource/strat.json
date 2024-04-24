@@ -9,9 +9,7 @@
     {
       "name": "Starting Blocks",
       "actions": [
-        { "calibrate": "True" },
-        { "waiting_tirette": true },
-        { "waiting_tirette": false }
+        { "calibrate": "True" }
       ]
     },
     {
@@ -35,13 +33,13 @@
       "actions": [
         { "goto": "1214,1420,-1" },
         { "grab": "" },
-        { "forward": "-200" }
+        { "forward": "-213" }
       ]
     },
     {
       "name": "Depose 1 and 2 stage",
       "actions": [
-        { "goto": "250,1700,180" },
+        { "goto": "150,1775,180" },
         { "depose": "" },
         { "depose": "" },
         { "rotate": "135" }

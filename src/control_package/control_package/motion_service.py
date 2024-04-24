@@ -34,7 +34,7 @@ class MotionService(Node):
     y_target = 0
     pos_estimate_0 = 0
     pos_estimate_1 = 0
-    mode = 'normal'
+    mode = 'default'
 
     target_0 = 0
     target_1 = 0
@@ -260,23 +260,15 @@ class MotionService(Node):
     def forward_callback(self, request, response):
         self.get_logger().info(f"Cmd forward_callback received: {request}")
         
-        if request.mode == 'normal' and self.mode != 'normal':
-            self.setPID("normal_odrive_config")
-            self.setPIDGains("normal_odrive_config")  
-            self.mode = 'normal'         
-        elif request.mode == 'slow' and self.mode != 'slow':
-            self.setPID("slow_odrive_config")
-            self.setPIDGains("slow_odrive_config")
-            self.mode = 'slow'
-            
+        if request.mode != self.mode:
+            self.mode = request.mode
+            filename = self.mode + "_odrive_config"
+            self.setPID(filename)
+            self.setPIDGains(filename)            
         
         self.x_target = self.x_ + round(request.distance_mm * math.cos(math.radians(self.r_)), 2)
         self.y_target = self.y_ + round(request.distance_mm * math.sin(math.radians(self.r_)), 2)
         self.motionForward(request.distance_mm)
-        if request.mode == 'slow':
-            time.sleep(request.distance_mm/150)
-            self.setPID("slow_odrive_config")
-            self.setPIDGains("slow_odrive_config")
 
         self.last_callback_service_requester = str(request.service_requester)
         response.motion_completed_response.service_requester = request.service_requester
@@ -285,7 +277,15 @@ class MotionService(Node):
 
     def rotate_callback(self, request, response):
         self.get_logger().info(f"Cmd rotate_callback received: {request}")
-
+        
+        if request.mode != self.mode:
+            self.mode = request.mode
+            filename = self.mode + "_odrive_config"        
+            self.setPID(filename)
+            self.setPIDGains(filename)
+        self.setPID(self.mode + "_odrive_config")
+        self.setPIDGains(self.mode + "_odrive_config")   
+        
         self.motionRotate(request.angle_deg)
         self.r_ += request.angle_deg
 
@@ -455,7 +455,7 @@ class MotionService(Node):
 
         return motion_completed
     
-    def cmd_forward(self, distance_mm, mode='normal'):
+    def cmd_forward(self, distance_mm, mode='default'):
         service_name = "cmd_forward_service"
 
         self.get_logger().info(f"[Exec Action] forward of: {distance_mm}mm")

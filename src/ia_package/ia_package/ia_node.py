@@ -255,7 +255,7 @@ class IANode(Node):
         request = CmdForwardService.Request()
         request.service_requester = str(self.__class__.__name__)
         request.distance_mm = int(param)
-        request.mode = 'normal'
+        request.mode = 'default'
 
         client.call_async(request)
 
@@ -272,6 +272,7 @@ class IANode(Node):
         request = CmdRotateService.Request()
         request.angle_deg = float(param)
         request.service_requester = str(self.__class__.__name__)
+        request.mode = 'default'
 
         client.call_async(request)
 

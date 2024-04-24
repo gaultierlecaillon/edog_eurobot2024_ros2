@@ -5,7 +5,7 @@
     "min_distance": 0.2,
     "max_distance": 2.0,
     "is_motion_complete_timeout_s": 5,
-    "cpr_error_tolerance": 0.1
+    "cpr_error_tolerance": 0.35
   },
   "calibration": {
     "linear": {

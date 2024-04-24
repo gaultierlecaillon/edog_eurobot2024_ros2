@@ -145,7 +145,7 @@ class ActuatorService(Node):
                 self.move_elevator(step)
                 self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']
                 time.sleep(0.5)                
-                self.cmd_forward(-200, 'normal')
+                self.cmd_forward(-200, 'default')
                 time.sleep(2)
                 self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['semi-close']
                 time.sleep(0.5) 
@@ -158,7 +158,7 @@ class ActuatorService(Node):
                 self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['open']
                 time.sleep(1) 
                                
-                self.cmd_forward(-200, 'normal')
+                self.cmd_forward(-200, 'default')
                 time.sleep(2)
                 self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['close']
                 time.sleep(0.1) 
@@ -275,7 +275,7 @@ class ActuatorService(Node):
         self.elevator_position = step       
 
     ''' Motion Funcitons '''
-    def cmd_forward(self, distance_mm, mode='normal'):
+    def cmd_forward(self, distance_mm, mode='default'):
         service_name = "cmd_forward_service"
 
         self.get_logger().info(f"[Exec Action] forward of: {distance_mm}mm")
