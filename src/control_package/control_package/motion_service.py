@@ -278,16 +278,8 @@ class MotionService(Node):
         return response
 
     def rotate_callback(self, request, response):
-        self.get_logger().info(f"Cmd rotate_callback received: {request}")
-        
-        if request.mode != self.mode:
-            self.mode = request.mode
-            filename = self.mode + "_odrive_config"        
-            self.setPID(filename)
-            self.setPIDGains(filename)
-        self.setPID(self.mode + "_odrive_config")
-        self.setPIDGains(self.mode + "_odrive_config")   
-        
+        self.get_logger().info(f"Cmd rotate_callback received: {request}")  
+              
         self.motionRotate(request.angle_deg)
         self.r_ += request.angle_deg
 
