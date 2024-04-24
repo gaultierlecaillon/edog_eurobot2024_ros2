@@ -9,6 +9,7 @@ from std_msgs.msg import Bool
 import numpy
 import math
 import json
+import time
 
 # Led
 from random import randint
@@ -118,21 +119,28 @@ class LidarFilter(Node):
             if self.max_distance > distance > self.min_distance:
                 index_offset = (index + 900) % 1800
                 angle = int(360 - index_offset / 5)
+                if angle > 180:
+                    angle = -(360 - angle)
 
                 # Convert polar coordinates to Cartesian coordinates
-                angle_rad = numpy.radians(angle)
+                angle_rad = numpy.radians(self.r_ - angle)
                 dist_x = distance * numpy.cos(angle_rad)  # in m
                 dist_y = distance * numpy.sin(angle_rad)  # in m
+                
+                
+                # Transform local obstacle coordinates to global coordinates
+                
+                #x_obstacle, y_obstacle = self.calculate_obstacle_position(self.x_, self.y_, dist_x, dist_y, angle_rad)
+                x_obstacle = round(dist_x * 1000 * math.cos(angle_rad) - dist_y * 1000 * math.sin(angle_rad) + self.x_)
+                y_obstacle = round(dist_x * 1000 * math.sin(angle_rad) + dist_y * 1000 * math.cos(angle_rad) + self.y_)
 
-                # Convert robot's angle to radians for trigonometry
-                r_rad = math.radians(self.r_)
-
-                x_obstacle = self.x_ + (dist_x*1000) * math.cos(r_rad) - (dist_y*1000) * math.sin(r_rad)
-                y_obstacle = self.y_ + (dist_x*1000) * math.cos(r_rad) - (dist_y*1000) * math.sin(r_rad)
-
+                #x_obstacle = self.x_ + (dist_x*1000) * numpy.cos(angle_rad) 
+                #y_obstacle = self.y_ + (dist_x*1000) * numpy.sin(angle_rad)           
+                self.get_logger().info(f"👮👮👮 Obstacle ! self.x_:={self.x_}m, self.y_:={self.y_}m, angle:={angle}, dist_x:={round(dist_x,2)}m, dist_y={round(dist_y,2)}m; Ostacle Position ({round(x_obstacle)}, {round(y_obstacle)})")
+                self.print_robot_infos()
 
                 if self.min_distance < dist_x < self.emergency_distance \
-                        and -0.3 < dist_y < 0.3 \
+                        and -0.4 < dist_y < 0.4 \
                         and 200 < x_obstacle < 2800 \
                         and 200 < y_obstacle < 1800:
                     self.get_logger().info(f"👮 Obstacle ! dist_x:={round(dist_x,2)}m, dist_y={round(dist_y,2)}m; Ostacle Position ({round(x_obstacle)}, {round(y_obstacle)})")
@@ -141,6 +149,21 @@ class LidarFilter(Node):
                     return
 
         self.emergency_stop_publisher_.publish(emergency_stop_msg)
+    
+    def print_robot_infos(self):
+        self.get_logger().info(
+            f"\033[95m[Robot Infos] x:{self.x_}, y:{self.y_}, r:{self.r_}\033[0m")
+
+    def calculate_obstacle_position(self, ax, ay, dist_x, dist_y, angle_rad):
+        # Calculate the rotated displacement components
+        dx_prime = (dist_x*1000) * math.cos(angle_rad) - (dist_y*1000) * math.sin(angle_rad)
+        dy_prime = (dist_x*1000) * math.sin(angle_rad) + (dist_y*1000) * math.cos(angle_rad)
+        
+        # Calculate final coordinates of point B
+        xb = ax + dx_prime
+        yb = ay + dy_prime
+        
+        return (xb, yb)
 
 def main(args=None):
     rclpy.init(args=args)

@@ -384,7 +384,7 @@ class IANode(Node):
         msg = String()
         msg.data = str(action)
         self.voice_publisher.publish(msg)
-        self.get_logger().info(f"[Publish topic] voice_topic msg:{msg}")
+        #self.get_logger().info(f"[Publish topic] voice_topic msg:{msg}")
 
     '''
     Shutdown the node at the end of the Match
