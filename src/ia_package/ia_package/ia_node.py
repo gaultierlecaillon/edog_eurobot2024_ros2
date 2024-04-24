@@ -256,6 +256,7 @@ class IANode(Node):
         request.service_requester = str(self.__class__.__name__)
         request.distance_mm = int(param)
         request.mode = 'default'
+        request.evitement = True
 
         client.call_async(request)
 

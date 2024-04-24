@@ -2,6 +2,7 @@
 string service_requester
 int32 distance_mm
 string mode
+bool evitement
 ---
 # Response
 robot_interfaces/MotionCompleteResponse motion_completed_response

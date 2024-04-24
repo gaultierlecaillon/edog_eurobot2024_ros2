@@ -186,8 +186,8 @@ class ActuatorService(Node):
                 self.move_elevator(step)
                 time.sleep(0.2)
                 
-                self.cmd_forward(400, 'slow')
-                time.sleep(2.5)
+                self.cmd_forward(300, 'slow', False)
+                time.sleep(3)
                               
                 self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['plant'] #top
                 time.sleep(0.2)
@@ -199,8 +199,8 @@ class ActuatorService(Node):
                 step = self.actuator_config['elevator']['plant']
                 self.move_elevator(step)
                 time.sleep(0.1)
-                self.cmd_forward(400, 'slow')
-                time.sleep(2.5)
+                self.cmd_forward(300, 'slow', False)
+                time.sleep(3)
                 self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['plant'] # bottom
                 time.sleep(0.1)
                 step = self.actuator_config['elevator']['up']
@@ -275,7 +275,7 @@ class ActuatorService(Node):
         self.elevator_position = step       
 
     ''' Motion Funcitons '''
-    def cmd_forward(self, distance_mm, mode='default'):
+    def cmd_forward(self, distance_mm, mode='default', evitement=True):
         service_name = "cmd_forward_service"
 
         self.get_logger().info(f"[Exec Action] forward of: {distance_mm}mm")
@@ -287,6 +287,7 @@ class ActuatorService(Node):
         request.service_requester = self.__class__.__name__
         request.distance_mm = int(distance_mm)
         request.mode = mode
+        request.evitement = evitement
         client.call_async(request)
 
         self.get_logger().info(f"[Publish] {request} to {service_name}")

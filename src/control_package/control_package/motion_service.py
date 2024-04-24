@@ -213,7 +213,7 @@ class MotionService(Node):
                 pos.r = float(self.r_)
                 self.publisher_pos.publish(pos)
 
-                if msg.data and not self.current_motion['emergency']:
+                if msg.data and not self.current_motion['emergency'] and self.current_motion['evitement']:
                     self.setPID("emergency_odrive_config")
                     self.setPIDGains("emergency_odrive_config")
                     self.odrv0.axis0.controller.input_pos = self.odrv0.axis0.encoder.pos_estimate
@@ -231,7 +231,7 @@ class MotionService(Node):
             
 
         if not msg.data and self.current_motion['emergency'] and self.clear_confirmation >= 5 :      
-            self.get_logger().info("No more obstacle !")        
+            self.get_logger().info("🚀 No more obstacle !")        
             pos_error_0 = abs(
                 self.pos_estimate_0 + self.current_motion['target_position_0'] - self.odrv0.axis0.encoder.pos_estimate)
             pos_error_1 = abs(
@@ -250,15 +250,17 @@ class MotionService(Node):
             self.clear_confirmation = 0
         elif not msg.data and self.current_motion['emergency'] and self.clear_confirmation < 5 :
             self.clear_confirmation += 1
-            self.get_logger().info(f"Waiting for confirmation {self.clear_confirmation}")
+            self.get_logger().info(f"⌛ Waiting for confirmation {self.clear_confirmation}")
         elif msg.data and self.current_motion['emergency']:
-            self.get_logger().info("Waiting for the obstacle to move")
+            self.get_logger().info("👮 Waiting for the obstacle to move")
 
     #
     # Distance to do in mm
     #
     def forward_callback(self, request, response):
         self.get_logger().info(f"Cmd forward_callback received: {request}")
+        
+        self.current_motion['evitement'] = request.evitement
         
         if request.mode != self.mode:
             self.mode = request.mode
@@ -395,7 +397,7 @@ class MotionService(Node):
 
     def is_motion_complete(self):
         motion_completed = False
-        timeout = self.config["robot"]["is_motion_complete_timeout_s"]
+        timeout = int(self.config["robot"]["is_motion_complete_timeout_s"])
 
         if self.current_motion['in_motion']:
             pos_error_0 = abs(
@@ -467,6 +469,7 @@ class MotionService(Node):
         request.service_requester = self.__class__.__name__
         request.distance_mm = int(distance_mm)
         request.mode = mode
+        request.evitement = True
         client.call_async(request)
 
         self.get_logger().info(f"[Publish] {request} to {service_name}")
