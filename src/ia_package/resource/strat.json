@@ -9,7 +9,9 @@
     {
       "name": "Starting Blocks",
       "actions": [
-        { "calibrate": "True" }
+        { "calibrate": "True" },
+        { "waiting_tirette": true },
+        { "waiting_tirette": false }
       ]
     },
     {
@@ -42,7 +44,7 @@
         { "goto": "250,1700,180" },
         { "depose": "" },
         { "depose": "" },
-        { "goto": "350,1650,180" }
+        { "goto": "500,1650,160" }
       ]
     }
   ]

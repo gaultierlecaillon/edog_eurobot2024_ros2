@@ -94,11 +94,6 @@ class MotionService(Node):
             "cmd_rotate_service",
             self.rotate_callback)
 
-        self.create_service(
-            CmdMotionHasStart,
-            "motion_has_start",
-            self.motion_has_started)
-
         # Subscribe to the "emergency_stop_topic"
         self.create_subscription(
             Bool,
@@ -327,7 +322,8 @@ class MotionService(Node):
 
             self.get_logger().warn(f"[MotionRotate] target_angle={target_angle}°, rotation_to_do={rotation_to_do}°")
 
-            self.call_motion_has_started(increment_pos, -increment_pos)
+            self.motion_has_started(increment_pos, -increment_pos)
+            
 
             self.odrv0.axis0.controller.move_incremental(increment_pos, False)
             self.odrv0.axis1.controller.move_incremental(-increment_pos, False)
@@ -341,7 +337,7 @@ class MotionService(Node):
 
             self.get_logger().warn(f"[MotionForward] (increment_mm={increment_mm} mm, increment_pos={increment_pos} pos)")
 
-            self.call_motion_has_started(increment_pos, increment_pos)
+            self.motion_has_started(increment_pos, increment_pos)
 
             self.odrv0.axis0.controller.move_incremental(increment_pos, False)
             self.odrv0.axis1.controller.move_incremental(increment_pos, False)
@@ -349,37 +345,22 @@ class MotionService(Node):
             self.get_logger().error("\033[91m[🚨 motionForward] Something went wrong with Odrive 🚨\033[0m")  
             self.shutdown_node()
 
-    def call_motion_has_started(self, increment_pos_0, increment_pos_1):
-        service_name = "motion_has_start"
-        client = self.create_client(CmdMotionHasStart, service_name)
-        while not client.wait_for_service(1):
-            self.get_logger().warn(f"Waiting for Server {service_name} to be available...")
-        request = CmdMotionHasStart.Request()
-        request.target_position_0 = increment_pos_0
-        request.target_position_1 = increment_pos_1
-        request.evitement = self.current_motion['evitement']
-        client.call_async(request)
-        self.current_motion['start'] = time.time()
-        self.get_logger().info(f"[Publish] {request} to {service_name}")
-
-    def motion_has_started(self, request, response):
+    def motion_has_started(self, increment_pos_0, increment_pos_1):
         
-        self.get_logger().info(f"request:={request}, self.pos_estimate_0:={self.pos_estimate_0}")
+        self.get_logger().info(f"Motion Has start => increment_pos_0:={increment_pos_0}, increment_pos_1:={increment_pos_1}")
         
-        if request.target_position_0 == request.target_position_1:
-            if request.target_position_0 > self.pos_estimate_0:
+        if increment_pos_0 == increment_pos_1:
+            if increment_pos_0 > self.pos_estimate_0:
                 type = "forward"
             else:
                 type = "backward"
-        elif request.target_position_1 == - request.target_position_0:
+        elif increment_pos_1 == - increment_pos_0:
             type = "rotation"
         else:
-            self.get_logger().error(f'\033[91m[Motion Type Unknown] request.target_position_0={request.target_position_0} and request.target_position_1={request.target_position_1}\033[0m')
-            response.success = False
-            return response
+            self.get_logger().error(f'\033[91m[Motion Type Unknown] increment_pos_0={increment_pos_0} and increment_pos_1={increment_pos_1}\033[0m')
         
-        target_position_0 = request.target_position_0
-        target_position_1 = request.target_position_1
+        target_position_0 = increment_pos_0
+        target_position_1 = increment_pos_1
 
         self.get_logger().info(f"Motion type '{type}' has begun !");
 
@@ -388,10 +369,7 @@ class MotionService(Node):
         self.current_motion['start'] = time.time()
         self.current_motion['target_position_0'] = target_position_0
         self.current_motion['target_position_1'] = target_position_1
-        self.current_motion['evitement'] = request.evitement
-
-        response.success = True
-        return response
+        self.current_motion['evitement'] = self.current_motion['evitement']
 
     def is_motion_complete(self):
         motion_completed = False
@@ -414,13 +392,17 @@ class MotionService(Node):
                     f"\033[38;5;46mMotion completed in {time.time() - self.current_motion['start']:.3f} seconds (pos_error_0:{pos_error_0}, pos_error_1:{pos_error_1}\033[0m")
                 motion_completed = True
 
-            elif time.time() - self.current_motion['start'] > timeout:
+            elif time.time() - self.current_motion['start'] > timeout and not self.current_motion['emergency']:
                 error_message = f"Motion completion timeout (pos_error_0: {pos_error_0}, pos_error_1: {pos_error_1})"
                 self.get_logger().error(f'\033[91m{error_message}\033[0m')
-
                 self.print_robot_infos()
-                motion_completed = False
-
+                
+                
+                self.motion_has_started(pos_error_0, pos_error_1)
+                self.odrv0.axis0.controller.move_incremental(pos_error_0, False)
+                self.odrv0.axis1.controller.move_incremental(pos_error_1, False)
+                time.sleep()
+                motion_completed = True
             '''
             self.get_logger().info(
                 f"Motion started from {time.time() - self.current_motion['start']:.3f} seconds (pos_error_0:{pos_error_0}, pos_error_1:{pos_error_1}\n")
