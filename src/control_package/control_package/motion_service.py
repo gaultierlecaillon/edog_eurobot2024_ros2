@@ -397,7 +397,7 @@ class MotionService(Node):
         motion_completed = False
 
         if self.current_motion['in_motion']:
-            timeout = 5
+            timeout = 10
 
             pos_error_0 = abs(
                 self.pos_estimate_0 + self.current_motion['target_position_0'] - self.odrv0.axis0.encoder.pos_estimate)
