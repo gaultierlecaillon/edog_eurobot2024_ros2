@@ -206,6 +206,19 @@ class MotionService(Node):
         #self.get_logger().info(f"msg.data: {msg.data}, self.current_motion['emergency']:{self.current_motion['emergency']}, self.clear_confirmation:{self.clear_confirmation}")      
         if self.current_motion['in_motion']:
             if self.current_motion['type'] == "forward":
+                if msg.data and not self.current_motion['emergency'] and self.current_motion['evitement']:
+                    self.setPID("emergency_odrive_config")
+                    self.setPIDGains("emergency_odrive_config")
+                    self.odrv0.axis0.controller.input_pos = self.odrv0.axis0.encoder.pos_estimate
+                    self.odrv0.axis1.controller.input_pos = self.odrv0.axis1.encoder.pos_estimate
+                    self.get_logger().error(f"\033[91mObstacle in front of the robot. Stopped @ input_pos_0={self.odrv0.axis0.encoder.pos_estimate} and input_pos_1={self.odrv0.axis1.encoder.pos_estimate}\033[0m")
+                    self.current_motion['emergency'] = True
+                    self.current_motion['in_motion'] = False
+                    self.speak("emergency_stop.mp3") 
+                    time.sleep(2)               
+                    self.setPID("default_odrive_config")
+                    self.setPIDGains("default_odrive_config")
+                
                 pos = Position()
                 x_mm = (self.odrv0.axis0.encoder.pos_estimate - self.pos_estimate_0) / \
                         self.config["calibration"]["linear"]["coef"]
@@ -219,19 +232,6 @@ class MotionService(Node):
                 pos.y = int(new_y)
                 pos.r = float(self.r_)
                 self.publisher_pos.publish(pos)
-
-                if msg.data and not self.current_motion['emergency'] and self.current_motion['evitement']:
-                    self.setPID("emergency_odrive_config")
-                    self.setPIDGains("emergency_odrive_config")
-                    self.odrv0.axis0.controller.input_pos = self.odrv0.axis0.encoder.pos_estimate
-                    self.odrv0.axis1.controller.input_pos = self.odrv0.axis1.encoder.pos_estimate
-                    self.get_logger().error(f"\033[91mObstacle in front of the robot. Stopped @ input_pos_0={self.odrv0.axis0.encoder.pos_estimate} and input_pos_1={self.odrv0.axis1.encoder.pos_estimate}\033[0m")
-                    self.current_motion['emergency'] = True
-                    self.current_motion['in_motion'] = False
-                    self.speak("emergency_stop.mp3") 
-                    time.sleep(2)               
-                    self.setPID("default_odrive_config")
-                    self.setPIDGains("default_odrive_config")
 
             self.is_motion_complete()
             
@@ -247,10 +247,6 @@ class MotionService(Node):
             pos_error_mm = ((pos_error_0 + pos_error_1) / 2) / self.config["calibration"]["linear"]["coef"]
             self.pos_estimate_0 = self.odrv0.axis0.encoder.pos_estimate
             self.pos_estimate_1 = self.odrv0.axis1.encoder.pos_estimate
-
-            print("pos_error_0", pos_error_0)
-            print("pos_error_1", pos_error_1)
-            print("pos_error_mm", pos_error_mm)
 
             self.motionForward(pos_error_mm)
             self.current_motion['emergency'] = False
