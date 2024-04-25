@@ -187,7 +187,7 @@ class ActuatorService(Node):
                 time.sleep(0.2)
                 
                 self.cmd_forward(400, 'slow', False)
-                time.sleep(2.5)
+                time.sleep(3)
                               
                 self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['plant'] #top
                 time.sleep(0.2)
@@ -200,7 +200,7 @@ class ActuatorService(Node):
                 self.move_elevator(step)
                 time.sleep(0.1)
                 self.cmd_forward(400, 'slow', False)
-                time.sleep(2.5)
+                time.sleep(3)
                 self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['plant'] # bottom
                 time.sleep(0.1)
                 step = self.actuator_config['elevator']['up']

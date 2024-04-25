@@ -363,19 +363,25 @@ class MotionService(Node):
         self.get_logger().info(f"[Publish] {request} to {service_name}")
 
     def motion_has_started(self, request, response):
+        
+        self.get_logger().info(f"request:={request}, self.pos_estimate_0:={self.pos_estimate_0}")
+        
+        if request.target_position_0 == request.target_position_1:
+            if request.target_position_0 > self.pos_estimate_0:
+                type = "forward"
+            else:
+                type = "backward"
+        elif request.target_position_1 == - request.target_position_0:
+            type = "rotation"
+        else:
+            self.get_logger().error(f'\033[91m[Motion Type Unknown] request.target_position_0={request.target_position_0} and request.target_position_1={request.target_position_1}\033[0m')
+            response.success = False
+            return response
+        
         target_position_0 = request.target_position_0
         target_position_1 = request.target_position_1
 
-        if target_position_0 == target_position_1:
-            type = "forward"
-        elif target_position_0 == - target_position_1:
-            type = "rotation"
-        else:
-            self.get_logger().error(f'\033[91m[Motion Type Unknown] target_position_0={target_position_0} and target_position_1={target_position_1}\033[0m')
-            response.success = False
-            return response
-
-        self.get_logger().info("Motion has begun !");
+        self.get_logger().info(f"Motion type '{type}' has begun !");
 
         self.current_motion['in_motion'] = True
         self.current_motion['type'] = type
@@ -423,7 +429,7 @@ class MotionService(Node):
             '''
 
         if motion_completed:
-            if self.current_motion['type'] == 'forward':
+            if self.current_motion['type'] == 'forward' or self.current_motion['type'] == 'backward':
                 self.x_ = self.x_target
                 self.y_ = self.y_target
 
