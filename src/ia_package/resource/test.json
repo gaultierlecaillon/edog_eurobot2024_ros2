@@ -3,7 +3,7 @@
   "name": "start_yellow.json",
   "description": "start Yellow, opening solr",
   "color": "yellow",
-  "startingPos": "0,0,0",
+  "startingPos": "250,250,90",
   "timer": "100",
   "strategy": [
     {

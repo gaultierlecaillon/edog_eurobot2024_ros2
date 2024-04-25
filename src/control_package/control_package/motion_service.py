@@ -67,8 +67,11 @@ class MotionService(Node):
         if not hasattr(self, 'voice_publisher'):
             self.voice_publisher = self.create_publisher(String, "voice_topic", 10)
 
-        # Add a publisher for emergency_stop
         self.bau_publisher = self.create_publisher(Bool, "bau_topic", 10)
+        
+        self.publisher_is_complete = self.create_publisher(MotionCompleteResponse, 'is_motion_complete', 10)
+
+        self.publisher_pos = self.create_publisher(Position, 'robot_position', 10)
 
         ''' Services '''
         self.calibration_service_ = self.create_service(
@@ -102,10 +105,6 @@ class MotionService(Node):
             "emergency_stop_topic",
             self.emergency_stop_callback,
             10)
-
-        self.publisher_is_complete = self.create_publisher(MotionCompleteResponse, 'is_motion_complete', 10)
-
-        self.publisher_pos = self.create_publisher(Position, 'robot_position', 10)
 
         self.get_logger().info("Motion Service has been started.")
 
@@ -179,10 +178,16 @@ class MotionService(Node):
             self.setPID("default_odrive_config")
             self.setPIDGains("default_odrive_config")
 
-            self.x_ = request.start_position.x
-            self.y_ = request.start_position.y
-            self.r_ = request.start_position.r   
-            self.get_logger().info(f"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")  
+            self.x_ = int(request.start_position.x)
+            self.y_ = int(request.start_position.y)
+            self.r_ = float(request.start_position.r)
+            
+            pos = Position()
+            pos.x = self.x_
+            pos.y = self.y_
+            pos.r = self.r_
+            self.publisher_pos.publish(pos)
+                
             self.print_robot_infos()
 
             self.pos_estimate_0 = 0
@@ -215,7 +220,7 @@ class MotionService(Node):
                 pos.r = float(self.r_)
                 self.publisher_pos.publish(pos)
 
-                if msg.data and not self.current_motion['emergency']:
+                if msg.data and not self.current_motion['emergency'] and self.current_motion['evitement']:
                     self.setPID("emergency_odrive_config")
                     self.setPIDGains("emergency_odrive_config")
                     self.odrv0.axis0.controller.input_pos = self.odrv0.axis0.encoder.pos_estimate
@@ -263,9 +268,10 @@ class MotionService(Node):
         self.get_logger().info(f"Cmd forward_callback received: {request}")
         
         if request.mode == 'slow':
-            print("mode slow")
+            self.get_logger().info("mode slow")
             # do something
         
+        self.current_motion['evitement'] = request.evitement
         self.x_target = self.x_ + round(request.distance_mm * math.cos(math.radians(self.r_)), 2)
         self.y_target = self.y_ + round(request.distance_mm * math.sin(math.radians(self.r_)), 2)
         self.motionForward(request.distance_mm)
@@ -355,7 +361,7 @@ class MotionService(Node):
         request = CmdMotionHasStart.Request()
         request.target_position_0 = increment_pos_0
         request.target_position_1 = increment_pos_1
-        request.evitement = True
+        request.evitement = self.current_motion['evitement']
         client.call_async(request)
         self.current_motion['start'] = time.time()
         self.get_logger().info(f"[Publish] {request} to {service_name}")

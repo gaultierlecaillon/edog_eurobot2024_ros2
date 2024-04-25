@@ -128,23 +128,14 @@ class LidarFilter(Node):
                 dist_y = distance * numpy.sin(angle_rad)  # in m
                 
                 x_obstacle, y_obstacle = self.calculate_obstacle_position(distance, angle)
+         
+                #self.get_logger().info(f"👮👮👮 Obstacle ! self.x_:={self.x_}m, self.y_:={self.y_}m, angle:={angle}, real_angle:={self.r_ - angle}, dist_x:={round(dist_x,2)}m, dist_y={round(dist_y,2)}m; Ostacle Position ({round(x_obstacle)}, {round(y_obstacle)})")
                 
-                
-                # Transform local obstacle coordinates to global coordinates
-                
-                #x_obstacle, y_obstacle = self.calculate_obstacle_position(self.x_, self.y_, dist_x, dist_y, angle_rad)
-                #x_obstacle = round(dist_x * 1000 * math.cos(angle_rad) - dist_y * 1000 * math.sin(angle_rad) + self.x_)
-                #y_obstacle = round(dist_x * 1000 * math.sin(angle_rad) + dist_y * 1000 * math.cos(angle_rad) + self.y_)
-
-                #x_obstacle = self.x_ + (dist_x*1000) * numpy.cos(angle_rad) 
-                #y_obstacle = self.y_ + (dist_x*1000) * numpy.sin(angle_rad)           
-                self.get_logger().info(f"👮👮👮 Obstacle ! self.x_:={self.x_}m, self.y_:={self.y_}m, angle:={angle}, real_angle:={self.r_ - angle}, dist_x:={round(dist_x,2)}m, dist_y={round(dist_y,2)}m; Ostacle Position ({round(x_obstacle)}, {round(y_obstacle)})")
-                self.print_robot_infos()
-
                 if self.min_distance < dist_x < self.emergency_distance \
-                        and -0.4 < dist_y < 0.4 \
-                        and 200 < x_obstacle < 2800 \
-                        and 200 < y_obstacle < 1800:
+                        and -0.35 < dist_y < 0.35 \
+                        and 100 < x_obstacle < 2900 \
+                        and 100 < y_obstacle < 1900:
+                    self.print_robot_infos()
                     self.get_logger().info(f"👮 Obstacle ! dist_x:={round(dist_x,2)}m, dist_y={round(dist_y,2)}m; Ostacle Position ({round(x_obstacle)}, {round(y_obstacle)})")
                     emergency_stop_msg.data = True
                     self.emergency_stop_publisher_.publish(emergency_stop_msg)                    
@@ -164,7 +155,7 @@ class LidarFilter(Node):
         angle_rad = math.radians(angle)
         total_angle = ar_rad - angle_rad
         
-        self.get_logger().info(f"distance={distance*1000}, angle={angle}, total_angle (rad)={total_angle}, self.x_={self.x_}, self.y_={self.y_}, self.r_={self.r_}")
+        #self.get_logger().info(f"distance={distance*1000}, angle={angle}, total_angle (rad)={total_angle}, self.x_={self.x_}, self.y_={self.y_}, self.r_={self.r_}")
         # Calculate the Cartesian coordinates of the obstacle
         ox = self.x_ + (distance*1000) * math.cos(total_angle)
         oy = self.y_ + (distance*1000) * math.sin(total_angle)
