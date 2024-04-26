@@ -1,12 +1,12 @@
 {
   "pince": {
     "motor0": {
-      "close": 10,
+      "close": 8,
       "open": 90,
       "extend": 130
     },
     "motor1": {
-      "close": 172,
+      "close": 176,
       "open": 93,
       "extend": 68
     }

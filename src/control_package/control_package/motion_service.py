@@ -9,11 +9,11 @@ from std_msgs.msg import Bool
 from robot_interfaces.msg import Position
 from robot_interfaces.msg import CmdPositionResult
 from robot_interfaces.srv import CmdPositionService
-from robot_interfaces.srv import CmdMotionHasStart
 from robot_interfaces.srv import CmdForwardService
 from robot_interfaces.srv import PositionBool
 from robot_interfaces.srv import CmdRotateService
 from robot_interfaces.msg import MotionCompleteResponse
+from robot_interfaces.srv import CmdActuatorService
 from std_msgs.msg import Bool
 from example_interfaces.msg import String
 
@@ -78,6 +78,11 @@ class MotionService(Node):
             PositionBool,
             "cmd_calibration_service",
             self.calibration_callback)
+        
+        self.create_service(
+            CmdActuatorService,
+            "cmd_border_calibration_service",
+            self.border_calibration_callback)
 
         self.position_service_ = self.create_service(
             CmdPositionService,
@@ -191,6 +196,62 @@ class MotionService(Node):
             self.connection_check_timer = self.create_timer(1, self.check_odrive_connection)
             response.success = True
             time.sleep(1)        
+        except Exception as e:
+            self.get_logger().error(f"Failed to execute calibration_callback: {e}")
+            response.success = False
+            
+        return response
+    
+    def border_calibration_callback(self, request, response):
+        try:
+            self.get_logger().info(f"Calibration on axe: {request.param}")
+            self.odrv0.axis0.trap_traj.config.vel_limit = self.config["robot"]["calibration_vel_limit"]
+            self.odrv0.axis1.trap_traj.config.vel_limit = self.config["robot"]["calibration_vel_limit"]
+            self.odrv0.axis0.controller.input_pos = self.odrv0.axis0.encoder.pos_estimate + 50
+            self.odrv0.axis1.controller.input_pos = self.odrv0.axis0.encoder.pos_estimate + 50
+        
+            is_m0_calibrated = False
+            is_m1_calibrated = False
+            while True:
+                if abs(self.odrv0.axis0.motor.current_control.Iq_measured) > 5 and abs(self.odrv0.axis0.motor.current_control.Iq_measured) > 5:
+                    self.odrv0.axis0.controller.input_pos = self.odrv0.axis0.encoder.pos_estimate
+                    self.odrv0.axis1.controller.input_pos = self.odrv0.axis1.encoder.pos_estimate
+                    self.get_logger().info(f"M0 and M1 Calibrated")
+                    break
+                else:
+                    self.get_logger().info(f"Calibration on going")
+                    time.sleep(0.05)
+
+            time.sleep(0.5)
+            
+            #second pass
+            self.get_logger().info(f"Second Calibration on axe: {request.param}")
+            self.odrv0.axis0.trap_traj.config.vel_limit = self.config["robot"]["calibration_vel_limit"] / 3
+            self.odrv0.axis1.trap_traj.config.vel_limit = self.config["robot"]["calibration_vel_limit"] / 3
+            self.odrv0.axis0.controller.input_pos = self.odrv0.axis0.encoder.pos_estimate + 20
+            self.odrv0.axis1.controller.input_pos = self.odrv0.axis0.encoder.pos_estimate + 20
+        
+            is_m0_calibrated = False
+            is_m1_calibrated = False
+            while True:
+                if abs(self.odrv0.axis0.motor.current_control.Iq_measured) > 5 and not is_m0_calibrated:
+                    self.odrv0.axis0.controller.input_pos = self.odrv0.axis0.encoder.pos_estimate
+                    is_m0_calibrated = True
+                    self.get_logger().info(f"M0 Calibrated")
+                if abs(self.odrv0.axis1.motor.current_control.Iq_measured) > 5 and not is_m1_calibrated:
+                    self.odrv0.axis1.controller.input_pos = self.odrv0.axis1.encoder.pos_estimate     
+                    is_m1_calibrated = True 
+                    self.get_logger().info(f"M1 Calibrated")
+                
+                if is_m0_calibrated and is_m1_calibrated:
+                    break
+                else:
+                    self.get_logger().info(f"Calibration on going")                       
+                    time.sleep(0.05)
+
+            self.get_logger().info(f"Border {request.param} reached !")
+                
+            response.success = True
         except Exception as e:
             self.get_logger().error(f"Failed to execute calibration_callback: {e}")
             response.success = False

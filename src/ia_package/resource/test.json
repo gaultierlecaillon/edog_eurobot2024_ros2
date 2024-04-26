@@ -1,9 +1,9 @@
 {
   "type": "Strategy",
   "name": "start_yellow.json",
-  "description": "start Yellow, opening solr",
+  "description": "",
   "color": "yellow",
-  "startingPos": "0,500,0",
+  "startingPos": "300,1700,0",
   "timer": "100",
   "strategy": [
     {
@@ -13,10 +13,9 @@
       ]
     },
     {
-      "name": "Opening",
+      "name": "Calibration",
       "actions": [
-        { "forward": "1000" },
-        { "forward": "-1000" }
+        { "borderCalibration": "x" }
       ]
     }
   ]
