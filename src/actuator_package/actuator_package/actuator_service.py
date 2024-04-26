@@ -45,13 +45,7 @@ class ActuatorService(Node):
         self.initStepper()
         self.initServo()
 
-        ''' Subscribers '''
-        self.create_subscription(
-            MotionCompleteResponse,
-            'is_motion_complete',
-            self.motion_complete_callback,
-            10)
-        
+        ''' Subscribers '''       
         self.create_subscription(
             Bool,
             'shutdown_topic',
@@ -94,9 +88,6 @@ class ActuatorService(Node):
         #self.get_logger().error(f'\033[91m[publish_pid] {msg.data}\033[0m')
         self.pid_publisher.publish(msg)
 
-    def motion_complete_callback(self, msg):
-        if msg.success and msg.service_requester == str(self.__class__.__name__):
-            self.get_logger().info(f"\033[38;5;208m[motion_complete_callback] Received in ActuatorService: {msg}\033[0m")
 
     def elevator_callback(self, request, response):
         try:
@@ -275,7 +266,7 @@ class ActuatorService(Node):
         self.elevator_position = step       
 
     ''' Motion Funcitons '''
-    def cmd_forward(self, distance_mm, mode='normal', evitement=True):
+    def cmd_forward(self, distance_mm, mode='default', evitement=True):
         service_name = "cmd_forward_service"
 
         self.get_logger().info(f"[Exec Action] forward of: {distance_mm}mm")

@@ -200,8 +200,8 @@ class MotionService(Node):
     def emergency_stop_callback(self, msg):
         #self.get_logger().info(f"msg.data: {msg.data}, self.current_motion['emergency']:{self.current_motion['emergency']}, self.clear_confirmation:{self.clear_confirmation}")      
         if self.current_motion['in_motion']:
-            if self.current_motion['type'] == "forward":
-                if msg.data and not self.current_motion['emergency'] and self.current_motion['evitement']:
+            if self.current_motion['type'] == "forward" or self.current_motion['type'] == "backward":
+                if msg.data and not self.current_motion['emergency'] and self.current_motion['evitement'] and self.current_motion['type'] == "forward":
                     self.setPID("emergency_odrive_config")
                     self.setPIDGains("emergency_odrive_config")
                     self.odrv0.axis0.controller.input_pos = self.odrv0.axis0.encoder.pos_estimate
@@ -357,6 +357,7 @@ class MotionService(Node):
         elif increment_pos_1 == - increment_pos_0:
             type = "rotation"
         else:
+            type = "unknown"
             self.get_logger().error(f'\033[91m[Motion Type Unknown] increment_pos_0={increment_pos_0} and increment_pos_1={increment_pos_1}\033[0m')
         
         target_position_0 = increment_pos_0
