@@ -34,6 +34,7 @@ class MotionService(Node):
     y_target = 0
     pos_estimate_0 = 0
     pos_estimate_1 = 0
+    mode = 'normal'
 
     target_0 = 0
     target_1 = 0
@@ -57,8 +58,9 @@ class MotionService(Node):
         super().__init__("motion_service")
 
         self.config = None
-        self.default_odrive_config = None
+        self.normal_odrive_config = None
         self.emergency_odrive_config = None
+        self.slow_odrive_config = None
         self.odrv0 = None
         self.loadRobotConfig()
         self.loadMotorsConfig()
@@ -138,11 +140,14 @@ class MotionService(Node):
         self.cpr_error_tolerance = self.config["robot"]["cpr_error_tolerance"]
         
     def loadMotorsConfig(self):
-        with open('/home/edog/ros2_ws/src/control_package/resource/default_odrive_config.json') as file:
-            self.default_odrive_config = json.load(file)
+        with open('/home/edog/ros2_ws/src/control_package/resource/normal_odrive_config.json') as file:
+            self.normal_odrive_config = json.load(file)
         
         with open('/home/edog/ros2_ws/src/control_package/resource/emergency_odrive_config.json') as file:
             self.emergency_odrive_config = json.load(file)
+            
+        with open('/home/edog/ros2_ws/src/control_package/resource/slow_odrive_config.json') as file:
+            self.slow_odrive_config = json.load(file)
 
     def calibration_callback(self, request, response):
         try:
@@ -170,8 +175,8 @@ class MotionService(Node):
                 self.odrv0.axis0.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
                 self.odrv0.axis1.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
 
-            self.setPID("default_odrive_config")
-            self.setPIDGains("default_odrive_config")
+            self.setPID("normal_odrive_config")
+            self.setPIDGains("normal_odrive_config")
 
             self.x_ = int(request.start_position.x)
             self.y_ = int(request.start_position.y)
@@ -211,8 +216,8 @@ class MotionService(Node):
                     self.current_motion['in_motion'] = False
                     self.speak("emergency_stop.mp3") 
                     time.sleep(2)               
-                    self.setPID("default_odrive_config")
-                    self.setPIDGains("default_odrive_config")
+                    self.setPID("normal_odrive_config")
+                    self.setPIDGains("normal_odrive_config")
                 
                 pos = Position()
                 x_mm = (self.odrv0.axis0.encoder.pos_estimate - self.pos_estimate_0) / \
@@ -258,10 +263,12 @@ class MotionService(Node):
     def forward_callback(self, request, response):
         self.get_logger().info(f"Cmd forward_callback received: {request}")
         
-        if request.mode == 'slow':
-            self.get_logger().info("mode slow")
-            # do something
-        
+        if request.mode != self.mode:
+            self.mode = request.mode
+            filename = self.mode + "_odrive_config"        
+            self.setPID(filename)
+            self.setPIDGains(filename)
+            
         self.current_motion['evitement'] = request.evitement
         self.x_target = self.x_ + round(request.distance_mm * math.cos(math.radians(self.r_)), 2)
         self.y_target = self.y_ + round(request.distance_mm * math.sin(math.radians(self.r_)), 2)
@@ -282,6 +289,18 @@ class MotionService(Node):
         response.motion_completed_response.service_requester = request.service_requester
         response.motion_completed_response.success = True
         return response
+    
+    def clean_angle_rotation(self, target_angle):
+        if target_angle > 0:
+            target_angle = target_angle % 360
+        else:
+            target_angle = target_angle % -360
+            
+        if target_angle > 180:
+            target_angle = -180 + (target_angle - 180)
+        if target_angle < -180:
+            target_angle = 180 + (target_angle + 180)
+        return target_angle
 
     def goto_callback(self, request, response):
         try:    
@@ -289,16 +308,15 @@ class MotionService(Node):
 
             # Calculate the target_angle in degrees to reach the point(x,y)
             target_angle = math.degrees(math.atan2(request.y - self.y_, request.x - self.x_)) - self.r_
-            if target_angle > 180:
-                target_angle = -180 + (target_angle - 180)
-            if target_angle < -180:
-                target_angle = 180 + (target_angle + 180)
+            target_angle = self.clean_angle_rotation(target_angle)
 
             # Calculate the distance between A and B in mm
             increment_mm = math.sqrt((request.x - self.x_) ** 2 + (request.y - self.y_) ** 2)
             # Calculate the finak angle
 
             final_target_angle = request.r - target_angle - self.r_
+            final_target_angle = self.clean_angle_rotation(final_target_angle)
+
             #self.get_logger().warn(f"final_target_angle={final_target_angle}={target_angle} + {self.r_}+{request.r}")
 
             if request.r == -1:
@@ -376,7 +394,7 @@ class MotionService(Node):
         motion_completed = False
 
         if self.current_motion['in_motion']:
-            timeout = 10
+            timeout = self.config["robot"]["is_motion_complete_timeout_s"]
 
             pos_error_0 = abs(
                 self.pos_estimate_0 + self.current_motion['target_position_0'] - self.odrv0.axis0.encoder.pos_estimate)
@@ -393,16 +411,16 @@ class MotionService(Node):
                     f"\033[38;5;46mMotion completed in {time.time() - self.current_motion['start']:.3f} seconds (pos_error_0:{pos_error_0}, pos_error_1:{pos_error_1}\033[0m")
                 motion_completed = True
 
-            elif time.time() - self.current_motion['start'] > timeout and not self.current_motion['emergency']:
+            elif time.time() - self.current_motion['start'] > timeout and not self.current_motion['emergency'] and pos_error_0 < 1 and pos_error_1 < 1:
                 error_message = f"Motion completion timeout (pos_error_0: {pos_error_0}, pos_error_1: {pos_error_1})"
                 self.get_logger().error(f'\033[91m{error_message}\033[0m')
                 self.print_robot_infos()
                 
                 
-                self.motion_has_started(pos_error_0, pos_error_1)
-                self.odrv0.axis0.controller.move_incremental(pos_error_0, False)
-                self.odrv0.axis1.controller.move_incremental(pos_error_1, False)
-                time.sleep()
+                #self.motion_has_started(pos_error_0, pos_error_1)
+                #self.odrv0.axis0.controller.move_incremental(pos_error_0, False)
+                #self.odrv0.axis1.controller.move_incremental(pos_error_1, False)
+                #time.sleep(3)
                 motion_completed = True
             '''
             self.get_logger().info(
@@ -447,8 +465,10 @@ class MotionService(Node):
         
         if config_filename == "emergency_odrive_config":
             config = self.emergency_odrive_config
+        elif config_filename == "slow_odrive_config":
+            config = self.slow_odrive_config
         else:
-            config = self.default_odrive_config
+            config = self.normal_odrive_config
         
 
         gain = config['gain']
@@ -469,8 +489,10 @@ class MotionService(Node):
         
         if config_filename == "emergency_odrive_config":
             config = self.emergency_odrive_config
+        elif config_filename == "slow_odrive_config":
+            config = self.slow_odrive_config    
         else:
-            config = self.default_odrive_config
+            config = self.normal_odrive_config
 
         accel_limit = config['accel_limit']
         decel_limit = config['decel_limit']

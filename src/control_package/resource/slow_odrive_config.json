@@ -1,8 +1,8 @@
 {   
-   "gain":"30",
+   "gain":"20",
    "vel_gain":"0.1666666716337204",
    "vel_integrator_gain":"0.08333333581",
-   "accel_limit":"20",
-   "decel_limit":"20",
-   "vel_limit":"30"
+   "accel_limit":"10",
+   "decel_limit":"15",
+   "vel_limit":"10"
 }

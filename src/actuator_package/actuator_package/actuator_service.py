@@ -127,6 +127,51 @@ class ActuatorService(Node):
             response.success = False
         return response
     
+    def grab_callback(self, request, response):
+        self.get_logger().info(f"grab_callback Called : param={request.param}")
+
+        try:
+            if not self.grabber_bottom_loaded and not self.grabber_top_loaded: # No plants stacked in the robot
+                self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']
+                time.sleep(0.1)
+                self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['open']
+                step = self.actuator_config['elevator']['plant']
+                self.move_elevator(step)
+                time.sleep(0.2)
+                
+                self.cmd_forward(400, 'slow', False)
+                time.sleep(2.5)
+                              
+                self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['plant'] #top
+                time.sleep(0.2)
+                self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['semi-close'] # bottom
+                self.grabber_top_loaded = True
+                response.success = True
+            elif not self.grabber_bottom_loaded and self.grabber_top_loaded: # 1 stack of plants loaded
+                self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open'] # bottom
+                step = self.actuator_config['elevator']['plant']
+                self.move_elevator(step)
+                time.sleep(0.1)
+                self.cmd_forward(400, 'slow', False)
+                time.sleep(2.5)
+                self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['plant'] # bottom
+                time.sleep(0.1)
+                step = self.actuator_config['elevator']['up']
+                self.move_elevator(step)
+                time.sleep(0.2)                
+                self.grabber_bottom_loaded = True                
+                response.success = True
+            elif self.grabber_bottom_loaded and self.grabber_top_loaded: # Robot already full
+                self.get_logger().error(f"Robot full, can't grab more plants 🙅")
+                response.success = False
+
+        except Exception as e:
+            self.get_logger().error(f"Failed to execute grab_callback: {e}")
+            response.success = False
+
+        return response
+
+    
     
     def depose_top_callback(self, request, response):
         self.get_logger().info(f"depose_top_callback Called : received={request.param}")
@@ -165,51 +210,7 @@ class ActuatorService(Node):
 
         return response
 
-    def grab_callback(self, request, response):
-        self.get_logger().info(f"grab_callback Called : param={request.param}")
 
-        try:
-            if not self.grabber_bottom_loaded and not self.grabber_top_loaded: # No plants stacked in the robot
-                self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']
-                time.sleep(0.1)
-                self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['open']
-                step = self.actuator_config['elevator']['plant']
-                self.move_elevator(step)
-                time.sleep(0.2)
-                
-                self.cmd_forward(400, 'slow', False)
-                time.sleep(3)
-                              
-                self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['plant'] #top
-                time.sleep(0.2)
-                self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['semi-close'] # bottom
-                self.grabber_top_loaded = True
-                response.success = True
-            elif not self.grabber_bottom_loaded and self.grabber_top_loaded: # 1 stack of plants loaded
-                self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open'] # bottom
-                step = self.actuator_config['elevator']['plant']
-                self.move_elevator(step)
-                time.sleep(0.1)
-                self.cmd_forward(400, 'slow', False)
-                time.sleep(3)
-                self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['plant'] # bottom
-                time.sleep(0.1)
-                step = self.actuator_config['elevator']['up']
-                self.move_elevator(step)
-                time.sleep(0.2)                
-                self.grabber_bottom_loaded = True                
-                response.success = True
-            elif self.grabber_bottom_loaded and self.grabber_top_loaded: # Robot already full
-                self.get_logger().error(f"Robot full, can't grab more plants 🙅")
-                response.success = False
-
-        except Exception as e:
-            self.get_logger().error(f"Failed to execute grab_callback: {e}")
-            response.success = False
-
-        return response
-
-    
     def close_pince(self):
         min_height = 180
         isSafeToMovePince = self.elevator_position >= min_height
@@ -266,7 +267,7 @@ class ActuatorService(Node):
         self.elevator_position = step       
 
     ''' Motion Funcitons '''
-    def cmd_forward(self, distance_mm, mode='default', evitement=True):
+    def cmd_forward(self, distance_mm, mode='normal', evitement=True):
         service_name = "cmd_forward_service"
 
         self.get_logger().info(f"[Exec Action] forward of: {distance_mm}mm")

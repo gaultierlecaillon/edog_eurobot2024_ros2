@@ -19,7 +19,7 @@
     },
     "motor3": {
       "close": 95,
-      "semi-close": 90,
+      "semi-close": 85,
       "open": 27,
       "plant": 40
     }
@@ -32,7 +32,7 @@
   },
   "elevator": {      
       "down": 0,
-      "depose": 50,
+      "depose": 30,
       "plant": 90,
       "jardiniere": 450,
       "up": 450

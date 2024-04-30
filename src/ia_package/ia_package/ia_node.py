@@ -255,7 +255,7 @@ class IANode(Node):
         request = CmdForwardService.Request()
         request.service_requester = str(self.__class__.__name__)
         request.distance_mm = int(param)
-        request.mode = 'default'
+        request.mode = 'normal'
         request.evitement = True
 
         client.call_async(request)
@@ -348,6 +348,7 @@ class IANode(Node):
             self.get_logger().info(
                 f"[NEXT ACTION(S)] {self.actions_dict}")
             #self.speak("task_complet_sound.mp3")
+            time.sleep(0.1)
         else: # on going
             self.actions_dict[0]['status'] = status
         self.current_action_already_printed = False
