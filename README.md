@@ -2,7 +2,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/othneildrew/Best-README-Template">
-    <img src="https://i.ibb.co/F5bjwWZ/banner.png" alt="Logo">
+    <img src="https://i.postimg.cc/m2LKh4Fk/banner.png" alt="Logo">
   </a>
 
   <h3 align="center">Edog Eurobot 2024 ROS2 packages </h3>
