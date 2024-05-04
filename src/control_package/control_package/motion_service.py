@@ -14,6 +14,7 @@ from robot_interfaces.srv import CmdForwardService
 from robot_interfaces.srv import PositionBool
 from robot_interfaces.srv import CmdRotateService
 from robot_interfaces.msg import MotionCompleteResponse
+from robot_interfaces.srv import CmdActuatorService
 from std_msgs.msg import Bool
 from example_interfaces.msg import String
 
@@ -96,12 +97,18 @@ class MotionService(Node):
             "cmd_rotate_service",
             self.rotate_callback)
 
+        self.create_service(
+            CmdActuatorService,
+            "cmd_homing_service",
+            self.homing_callback)
+
         # Subscribe to the "emergency_stop_topic"
         self.create_subscription(
             Bool,
             "emergency_stop_topic",
             self.emergency_stop_callback,
             10)
+            
 
         self.get_logger().info("Motion Service has been started.")
 
@@ -200,6 +207,52 @@ class MotionService(Node):
             self.get_logger().error(f"Failed to execute calibration_callback: {e}")
             response.success = False
             
+        return response
+    
+    def homing_callback(self, request, response):
+
+        maxAmp = 3
+        try:
+            self.get_logger().info(f"Homing Robot: {request.param}")
+            self.odrv0.axis0.trap_traj.config.vel_limit = self.config["robot"]["calibration_vel_limit"]
+            self.odrv0.axis1.trap_traj.config.vel_limit = self.config["robot"]["calibration_vel_limit"]
+
+            self.odrv0.axis0.controller.config.pos_gain = self.config["robot"]["calibration_pos_gain"]
+            self.odrv0.axis1.controller.config.pos_gain = self.config["robot"]["calibration_pos_gain"] 
+
+            target_0 = self.odrv0.axis0.encoder.pos_estimate - 20
+            target_1 = self.odrv0.axis1.encoder.pos_estimate - 20
+
+            self.odrv0.axis0.controller.input_pos = target_0
+            self.odrv0.axis1.controller.input_pos = target_1
+
+            is_m0_calibrated = False
+            is_m1_calibrated = False
+            while True:
+                if abs(self.odrv0.axis0.motor.current_control.Iq_measured) > maxAmp and not is_m0_calibrated:
+                    self.odrv0.axis0.controller.input_pos = self.odrv0.axis0.encoder.pos_estimate
+                    is_m0_calibrated =  True
+                    self.get_logger().info(f"M0 Calibrated")
+
+                if abs(self.odrv0.axis1.motor.current_control.Iq_measured) > maxAmp and not is_m1_calibrated:
+                    self.odrv0.axis1.controller.input_pos = self.odrv0.axis1.encoder.pos_estimate
+                    is_m1_calibrated =  True
+                    self.get_logger().info(f"M1 Calibrated")
+                
+                if is_m0_calibrated and is_m1_calibrated:
+                    break
+                else:
+                    self.get_logger().info(f"Homing (m0:={self.odrv0.axis0.motor.current_control.Iq_measured}Amp | m1:={self.odrv0.axis1.motor.current_control.Iq_measured}Amp)")
+                          
+            self.setPID("normal_odrive_config")
+            self.setPIDGains("normal_odrive_config")
+            self.get_logger().info(f"Border reached !")
+
+            response.success = True
+        except Exception as e:
+            self.get_logger().error(f"Failed to execute calibration_callback: {e}")
+            response.success = False
+
         return response
 
     def emergency_stop_callback(self, msg):

@@ -1,23 +1,22 @@
 {
   "type": "Strategy",
-  "name": "start_yellow.json",
-  "description": "start Yellow, opening solr",
-  "color": "yellow",
-  "startingPos": "0,0,0",
+  "name": "test.json",
+  "description": "testing strat",
+  "color": "blue",
+  "startingPos": "1775,2775,180",
   "timer": "100",
+  "final_score": "42",
   "strategy": [
     {
       "name": "Starting Blocks",
       "actions": [
-        { "calibrate": "True" }
-      ]
-    },
-    {
-      "name": "Opening",
-      "actions": [
-        { "forward": "300" },
-        { "grab": "" },
-        { "forward": "-700" }
+        { "calibrate": "True" },
+        { "waiting_tirette": true },
+        { "rotate":  "90"},
+        { "forward":  "100"},
+        { "rotate":  "-90"},
+        { "forward":  "100"},
+        { "waiting_tirette": false }
       ]
     }
   ]

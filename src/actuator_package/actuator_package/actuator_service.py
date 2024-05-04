@@ -78,6 +78,11 @@ class ActuatorService(Node):
             CmdActuatorService,
             "cmd_depose_top_service",
             self.depose_top_callback)
+        
+        self.create_service(
+            CmdActuatorService,
+            "cmd_pince_service",
+            self.pince_callback)
 
         self.publish_pid()
         self.get_logger().info("Pince Service has been started.")
@@ -116,7 +121,8 @@ class ActuatorService(Node):
 
             if request.param == "open":
                 self.kit.servo[4].angle = self.actuator_config['solarpanel']['motor4']['open']
-                time.sleep(0.25)
+                step = self.actuator_config['elevator']['up']
+                self.move_elevator(step)
             elif request.param == "close":
                 self.kit.servo[4].angle = self.actuator_config['solarpanel']['motor4']['close']
                 time.sleep(0.25)
@@ -228,21 +234,23 @@ class ActuatorService(Node):
             self.move_elevator(current_elevator_position)   
              
             
-    def open_pince(self):
-        min_height = 180
-        isSafeToMovePince = self.elevator_position >= min_height
-        current_elevator_position = self.elevator_position
+    def pince_callback(self, request, response):
         
-        if not isSafeToMovePince:            
-            self.move_elevator(min_height)   
-            time.sleep(0.3)         
-            
-        self.kit.servo[0].angle = self.actuator_config['pince']['motor0']['open']
-        self.kit.servo[1].angle = self.actuator_config['pince']['motor1']['open']
-        
-        if not isSafeToMovePince:
-            time.sleep(0.3)
-            self.move_elevator(current_elevator_position)
+        self.get_logger().info(f"pince_callback: {request}")
+ 
+        response.success = False
+        try:
+            param = [str(x) for x in request.param.split(",")]
+            if param[0] == "right":
+                self.kit.servo[0].angle = self.actuator_config['pince']['motor0'][param[1]]
+                response.success = True
+            elif param[0] == "left":
+                self.kit.servo[1].angle = self.actuator_config['pince']['motor1'][param[1]]
+                response.success = True
+        except Exception as e:
+            self.get_logger().error(f"Failed to execute pince_callback: {e}")
+
+        return response
 
 
     def down_elevator(self):
