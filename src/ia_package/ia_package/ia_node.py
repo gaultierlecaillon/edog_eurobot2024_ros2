@@ -53,6 +53,12 @@ class IANode(Node):
         # Create a publisher for the shutdown signal
         self.shutdown_publisher = self.create_publisher(Bool, 'shutdown_topic', 10)
 
+        ''' Services '''        
+        self.create_service(
+            CmdActuatorService,
+            "sleep_service",
+            self.sleep_callback)
+        
         ''' Subscribers '''
         self.pids = []
         self.create_subscription(
@@ -158,6 +164,36 @@ class IANode(Node):
             
             self.update_current_action_status('done')
             self.destroy_subscription(self.subscriber_)  # Unsubscribe from the topic
+
+    def sleep_callback(self, request, response):
+        try:
+            self.get_logger().info(f"sleep_callback Called : {request.param}")
+            if request.param and request.param != "":
+                time.sleep(int(request.param))
+                response.success = True
+            else:
+                response.success = False
+        except Exception as e:
+            self.get_logger().error(f"Failed to execute sleep_callback: {e}")
+            response.success = False
+        return response
+    
+    def sleep(self, param):
+        service_name = "sleep_service"
+        self.get_logger().info(f"Performing 'Sleep' action with param: {param}")
+        client = self.create_client(CmdActuatorService, service_name)
+        while not client.wait_for_service(1):
+            self.get_logger().warn(f"Waiting for Server {service_name} to be available...")
+
+        request = CmdActuatorService.Request()
+        request.param = param
+        future = client.call_async(request)
+
+        future.add_done_callback(
+            partial(self.callback_current_action))
+
+        self.get_logger().info(f"[Publish] {request} to {service_name}")
+    
 
     def calibrate(self, param):
         service_name = "cmd_calibration_service"
