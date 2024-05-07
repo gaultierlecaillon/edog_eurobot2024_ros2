@@ -1,23 +1,53 @@
 {
   "type": "Strategy",
-  "name": "start_yellow.json",
-  "description": "start Yellow, opening solr",
-  "color": "yellow",
-  "startingPos": "0,0,0",
-  "timer": "100",
+  "name": "test.json",
+  "description": "testing strat",
+  "color": "blue",
+  "startingPos": "1775,2775,180",
+  "timer": "5",
+  "final_score": "42",
   "strategy": [
     {
       "name": "Starting Blocks",
-      "actions": [
-        { "calibrate": "True" }
-      ]
-    },
-    {
-      "name": "Opening",
-      "actions": [
-        { "forward": "300" },
-        { "grab": "" },
-        { "forward": "-700" }
+      "actions": [        
+        { "waiting_tirette": true },
+        { "waiting_tirette": false },
+        { "pince": "right,open" },
+        { "sleep": "1"},
+        { "pince": "right,close" },
+        { "sleep": "1"},
+        { "pince": "right,open" },
+        { "sleep": "1"},
+        { "pince": "right,close" },
+        { "sleep": "1"},
+        { "pince": "right,open" },
+        { "sleep": "1"},
+        { "pince": "right,close" },
+        { "sleep": "1"},
+        { "pince": "right,open" },
+        { "sleep": "1"},
+        { "pince": "right,close" },
+        { "sleep": "2"},
+        { "pince": "right,open" },
+        { "sleep": "2"},
+        { "pince": "right,close" },
+        { "sleep": "2"},
+        { "pince": "right,open" },
+        { "sleep": "2"},
+        { "pince": "right,close" },
+        { "sleep": "2"},
+        { "pince": "right,open" },
+        { "sleep": "2"},
+        { "pince": "right,close" },
+        { "sleep": "2"},
+        { "pince": "right,open" },
+        { "sleep": "2"},
+        { "pince": "right,close" },
+        { "sleep": "2"},
+        { "pince": "right,open" },
+        { "sleep": "2"},
+        { "pince": "right,close" },
+        { "sleep": "2"}
       ]
     }
   ]

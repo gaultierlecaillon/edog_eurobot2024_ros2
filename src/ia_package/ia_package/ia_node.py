@@ -22,13 +22,14 @@ from example_interfaces.msg import String
 # Servo
 from adafruit_servokit import ServoKit
 
-class IANode(Node):
+class IANode(Node):    
     action_name = None
     action_param = None
     current_action_already_printed = False
 
     # Declare Timer (Default 100 secondes)
     shutdown_after_seconds = 100
+    final_score = 0
 
     def __init__(self):
         super().__init__('ia_node')
@@ -52,6 +53,12 @@ class IANode(Node):
         # Create a publisher for the shutdown signal
         self.shutdown_publisher = self.create_publisher(Bool, 'shutdown_topic', 10)
 
+        ''' Services '''        
+        self.create_service(
+            CmdActuatorService,
+            "sleep_service",
+            self.sleep_callback)
+        
         ''' Subscribers '''
         self.pids = []
         self.create_subscription(
@@ -104,7 +111,8 @@ class IANode(Node):
         else:
             self.get_logger().info(
                 "\033[38;5;208m[Match done] No more actions to exec\n\n\t\t\t (⌐■_■) 𝘪𝘴 𝘪𝘵 𝘗1 ?\033[0m\n")    
-            self.speak("job-finish.mp3")        
+            self.speak("job-finish.mp3")     
+            self.display_score()   
             self.shutdown_nodes()
 
     def is_motion_complete_callback(self, msg):
@@ -130,9 +138,22 @@ class IANode(Node):
         else:
             self.get_logger().info(f"\033[95m[⏳ WAITING ⏳] Pull the tirette and the match will start for {self.shutdown_after_seconds}s 🏁\033[0m")
 
+    def homing(self, param):
+        service_name = "cmd_homing_service"
 
+        self.get_logger().info(f"[Exec Action] 🏠 Homing with param: {param}")
+        client = self.create_client(CmdActuatorService, service_name)
+        while not client.wait_for_service(0.25):
+            self.get_logger().warn(f"Waiting for Server {service_name} to be available...")
 
+        request = CmdActuatorService.Request()
+        request.param = param
+        future = client.call_async(request)
 
+        future.add_done_callback(
+            partial(self.callback_current_action))
+
+        self.get_logger().info(f"[Publish] {request} to {service_name}")
 
     def callback_waiting_tirette(self, msg, param):
         if msg.data == param:
@@ -143,6 +164,36 @@ class IANode(Node):
             
             self.update_current_action_status('done')
             self.destroy_subscription(self.subscriber_)  # Unsubscribe from the topic
+
+    def sleep_callback(self, request, response):
+        try:
+            self.get_logger().info(f"sleep_callback Called : {request.param}")
+            if request.param and request.param != "":
+                time.sleep(int(request.param))
+                response.success = True
+            else:
+                response.success = False
+        except Exception as e:
+            self.get_logger().error(f"Failed to execute sleep_callback: {e}")
+            response.success = False
+        return response
+    
+    def sleep(self, param):
+        service_name = "sleep_service"
+        self.get_logger().info(f"Performing 'Sleep' action with param: {param}")
+        client = self.create_client(CmdActuatorService, service_name)
+        while not client.wait_for_service(1):
+            self.get_logger().warn(f"Waiting for Server {service_name} to be available...")
+
+        request = CmdActuatorService.Request()
+        request.param = param
+        future = client.call_async(request)
+
+        future.add_done_callback(
+            partial(self.callback_current_action))
+
+        self.get_logger().info(f"[Publish] {request} to {service_name}")
+    
 
     def calibrate(self, param):
         service_name = "cmd_calibration_service"
@@ -157,22 +208,6 @@ class IANode(Node):
         request.start_position.x = int_param[0]
         request.start_position.y = int_param[1]
         request.start_position.r = float(int_param[2])
-        future = client.call_async(request)
-
-        future.add_done_callback(
-            partial(self.callback_current_action))
-
-        self.get_logger().info(f"[Publish] {request} to cmd_calibration_service")
-
-    def solarpanel(self, param):
-        service_name = "cmd_solarpanel_service"
-        self.get_logger().info(f"Performing 'SolarPanel' action with param: {param}")
-        client = self.create_client(CmdActuatorService, service_name)
-        while not client.wait_for_service(1):
-            self.get_logger().warn(f"Waiting for Server {service_name} to be available...")
-
-        request = CmdActuatorService.Request()
-        request.param = param
         future = client.call_async(request)
 
         future.add_done_callback(
@@ -199,6 +234,22 @@ class IANode(Node):
     def arm(self, param):
         service_name = "cmd_arm_service"
         self.get_logger().info(f"Performing 'Arm' action with param: {param}")
+        client = self.create_client(CmdActuatorService, service_name)
+        while not client.wait_for_service(1):
+            self.get_logger().warn(f"Waiting for Server {service_name} to be available...")
+
+        request = CmdActuatorService.Request()
+        request.param = param
+        future = client.call_async(request)
+
+        future.add_done_callback(
+            partial(self.callback_current_action))
+
+        self.get_logger().info(f"[Publish] {request} to {service_name}")
+
+    def pince(self, param):
+        service_name = "cmd_pince_service"
+        self.get_logger().info(f"Performing 'Pince' action with param: {param}")
         client = self.create_client(CmdActuatorService, service_name)
         while not client.wait_for_service(1):
             self.get_logger().warn(f"Waiting for Server {service_name} to be available...")
@@ -362,6 +413,8 @@ class IANode(Node):
 
             if 'timer' in self.config:
                 self.shutdown_after_seconds = int(self.config['timer'])
+            if 'final_score' in self.config:
+                self.final_score = int(self.config['final_score'])
 
             # Logging the loaded strategy information
             self.get_logger().info(f"\033[95m[Loading Strategy] {self.config['name']} ({self.config['description']}) during {self.shutdown_after_seconds} secondes !\033[0m")
@@ -432,8 +485,11 @@ class IANode(Node):
         GPIO.output(EN_pin, GPIO.HIGH)  # Disable the driver
         GPIO.cleanup()  # Cleanup the GPIO
 
-    def shutdown_nodes(self):
-        self.get_logger().info(f"\033[38;5;208m[SHUTDOW NODE] Adios\n\n\t\t\t (⌐■_■) 𝘪𝘴 𝘪𝘵 𝘗1 ?\n\033[0m\n")        
+    def display_score(self):
+        self.get_logger().info(f"\033[38;5;208m[FINAL SCORE] (⌐■_■) {self.final_score}\n\033[0m\n")        
+
+        
+    def shutdown_nodes(self):        
         #self.match_timer.cancel() # todo 'IANode' object has no attribute 'match_timer' when no tirette        
         self.actions_dict.clear()
         self.disableActuators()        

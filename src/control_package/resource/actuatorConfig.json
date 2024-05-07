@@ -3,7 +3,7 @@
     "motor0": {
       "close": 10,
       "open": 90,
-      "extend": 130
+      "extend": 120
     },
     "motor1": {
       "close": 172,
@@ -13,9 +13,9 @@
   },
   "graber": {
     "motor2": {
-      "close": 40,
+      "close": 45,
       "open": 138,
-      "plant": 65
+      "plant": 68
     },
     "motor3": {
       "close": 95,
@@ -26,14 +26,14 @@
   },
   "solarpanel": {
     "motor4": {
-      "open": 70,
+      "open": 65,
       "close": 180 
     }   
   },
   "elevator": {      
       "down": 0,
       "depose": 30,
-      "plant": 90,
+      "plant": 100,
       "jardiniere": 450,
       "up": 450
   }
