@@ -169,7 +169,7 @@ class IANode(Node):
         try:
             self.get_logger().info(f"sleep_callback Called : {request.param}")
             if request.param and request.param != "":
-                time.sleep(int(request.param))
+                time.sleep(float(request.param))
                 response.success = True
             else:
                 response.success = False

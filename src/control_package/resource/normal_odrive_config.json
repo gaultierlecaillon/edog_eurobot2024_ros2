@@ -4,5 +4,5 @@
    "vel_integrator_gain":"0.08333333581",
    "accel_limit":"20",
    "decel_limit":"20",
-   "vel_limit":"30"
+   "vel_limit":"20"
 }

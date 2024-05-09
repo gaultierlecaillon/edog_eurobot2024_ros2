@@ -3,21 +3,48 @@
     "name": "homologation.json",
     "description": "Strat that move forward, grab plants and drop them",
     "color": "green",
-    "startingPos": "0,0,0",
+    "startingPos": "250,294,0",
     "timer": "100",
     "strategy": [
-        {
+          {
             "name": "Starting Blocks",
             "actions": [
-              { "calibrate": "True" }
+              { "calibrate": "True" },
+              { "waiting_tirette": true },
+              { "waiting_tirette": false }
             ]
           },
           {
-            "name": "Opening",
+            "name": "grab 1st plants",
             "actions": [
-              { "forward": "1500" },
-              { "forward": "-500" },
-              { "goto": "0,0,0" }
+              { "goto": "600,700,0" },
+              { "grab": "" },
+              { "forward": "-200" }
+            ]
+          },
+          {
+            "name": "grab 2nd plants",
+            "actions": [
+              { "goto": "600,1300,0" },
+              { "grab": "" },
+              { "forward": "-200" }
+            ]
+          },
+          {
+            "name": "Depose",
+            "actions": [
+              { "goto": "450,300,-1" },
+              { "goto": "400,300,180" },
+              { "depose": "" },
+              { "depose": "" },
+              { "forward": "-200" }
+            ]
+          },
+          {
+            "name": "Home",
+            "actions": [
+              { "goto": "500,1700,-1" },
+              { "goto": "300,1700,0" }
             ]
           }
     ]

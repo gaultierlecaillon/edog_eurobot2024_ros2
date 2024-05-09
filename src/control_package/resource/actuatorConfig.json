@@ -6,7 +6,7 @@
       "extend": 120
     },
     "motor1": {
-      "close": 172,
+      "close": 175,
       "open": 93,
       "extend": 68
     }
@@ -33,7 +33,7 @@
   "elevator": {      
       "down": 0,
       "depose": 30,
-      "plant": 100,
+      "plant": 130,
       "jardiniere": 450,
       "up": 450
   }

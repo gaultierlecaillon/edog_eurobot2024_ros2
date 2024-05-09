@@ -3,7 +3,7 @@
   "name": "strat_bleu.json",
   "description": "Strat Bleu",
   "color": "blue",
-  "startingPos": "2750,1750,180",
+  "startingPos": "2885,1775,180",
   "timer": "100",
   "strategy": [
     {
@@ -11,6 +11,7 @@
       "actions": [
         { "calibrate": "True" },
         { "waiting_tirette": true },
+        { "forward": "100" }
         { "waiting_tirette": false }
       ]
     },
@@ -18,22 +19,34 @@
       "name": "Solar panels",
       "actions": [
         { "arm": "open" },
-        { "forward": "700" },
-        { "arm": "close" }
+        { "pince": "right,extend" },
+        { "forward": "600" }
       ]
     },
     {
-      "name": "Grab 1st plant",
+      "name": "Solar panels",
       "actions": [
-        { "goto": "1700,1700,225" },
+        { "forward": "350" },
+        { "forward": "350" },
+        { "arm": "close" },
+        { "forward": "-200" },
+        { "pince": "right,close" }
+      ]
+    },
+    {
+      "name": "Grab 1st plants",
+      "actions": [
+        {"goto": "1500,1775,-90"},
+        { "forward": "-100" },
         { "grab": "" },
+        { "forward": "200" },
         { "forward": "-200" }
       ]
     },
     {
-      "name": "Grab 2nd plant",
+      "name": "Grab 2nd plants",
       "actions": [
-        { "goto": "1750,1460,-1" },
+        {"goto": "1550,1300,0"},
         { "grab": "" },
         { "forward": "-200" }
       ]
@@ -43,14 +56,7 @@
       "actions": [
         { "goto": "2600,1700,0" },
         { "depose": "" },
-        { "depose": "" },
-        { "forward": "-200" }
-      ]
-    },
-    {
-      "name": "Home",
-      "actions": [
-        { "goto": "2700,500,180" }
+        { "depose": "" }
       ]
     }
   ]

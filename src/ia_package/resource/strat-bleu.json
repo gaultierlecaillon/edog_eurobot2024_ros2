@@ -3,7 +3,7 @@
   "name": "strat_bleu.json",
   "description": "Strat Bleu",
   "color": "blue",
-  "startingPos": "2800,1775,180",
+  "startingPos": "2885,1775,180",
   "timer": "100",
   "strategy": [
     {
@@ -19,33 +19,24 @@
       "actions": [
         { "arm": "open" },
         { "pince": "right,extend" },
-        { "forward": "600" }
-      ]
-    },
-    {
-      "name": "Solar panels",
-      "actions": [
-        { "forward": "350" },
-        { "forward": "350" },
+        { "forward": "700" },
         { "arm": "close" },
         { "forward": "-200" },
         { "pince": "right,close" }
       ]
     },
     {
-      "name": "Grab 1st plants",
+      "name": "grab 1st plants",
       "actions": [
-        {"goto": "1500,1775,-90"},
-        { "forward": "-100" },
+        { "goto": "2400,1300,180" },
         { "grab": "" },
-        { "forward": "200" },
         { "forward": "-200" }
       ]
     },
     {
-      "name": "Grab 2nd plants",
+      "name": "grab 2nd plants",
       "actions": [
-        {"goto": "1550,1300,0"},
+        { "goto": "2400,700,180" },
         { "grab": "" },
         { "forward": "-200" }
       ]
@@ -53,9 +44,17 @@
     {
       "name": "Depose",
       "actions": [
-        { "goto": "2600,1700,0" },
+        { "goto": "2600,300,0" },
+        { "goto": "2680,300,0" },
+        { "pince": "right,extend" },
+        { "pince": "left,extend" },
+        { "sleep": "1" },
+        { "pince": "right,close" },
+        { "pince": "left,close" },   
+        { "sleep": "0.3" },     
         { "depose": "" },
-        { "depose": "" }
+        { "depose": "" },
+        { "forward": "150" }
       ]
     }
   ]

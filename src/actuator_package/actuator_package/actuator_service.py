@@ -141,7 +141,7 @@ class ActuatorService(Node):
                 self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']
                 time.sleep(0.1)
                 self.kit.servo[2].angle = self.actuator_config['graber']['motor2']['open']
-                step = self.actuator_config['elevator']['plant']
+                step = self.actuator_config['elevator']['down']
                 self.move_elevator(step)
                 time.sleep(0.2)
                 
@@ -187,10 +187,10 @@ class ActuatorService(Node):
                 self.move_elevator(step)
                 self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['open']
                 time.sleep(0.5)                
-                self.cmd_forward(-200, 'slow', False)
+                self.cmd_forward(-150, 'slow', False)
                 time.sleep(2)
-                self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['semi-close']
-                time.sleep(0.5) 
+                #self.kit.servo[3].angle = self.actuator_config['graber']['motor3']['semi-close']
+                #time.sleep(0.5) 
                 self.grabber_bottom_loaded = False
                 
             elif not self.grabber_bottom_loaded and self.grabber_top_loaded: # only top loaded => drop both                

@@ -271,7 +271,14 @@ class MotionService(Node):
                     time.sleep(2)               
                     self.setPID("normal_odrive_config")
                     self.setPIDGains("normal_odrive_config")
-                
+                else:
+                    self.get_logger().info(f"Msg Data: {msg.data}")  
+                    self.get_logger().info(f"self.current_motion['type']: {self.current_motion['type']}")  
+                    self.get_logger().info(f"self.current_motion['emergency']: {self.current_motion['emergency']}")  
+                    self.get_logger().info(f"self.current_motion['evitement']: {self.current_motion['evitement']}")  
+                    self.get_logger().info(f"self.current_motion['emergency']: {self.current_motion['emergency']}")  
+
+
                 pos = Position()
                 x_mm = (self.odrv0.axis0.encoder.pos_estimate - self.pos_estimate_0) / \
                         self.config["calibration"]["linear"]["coef"]
@@ -285,8 +292,10 @@ class MotionService(Node):
                 pos.y = int(new_y)
                 pos.r = float(self.r_)
                 self.publisher_pos.publish(pos)
+            else:
+                self.get_logger().info("Obstavle but not forward or backward")  
 
-            self.is_motion_complete()
+            self.is_motion_complete()   
             
             
 
@@ -303,12 +312,14 @@ class MotionService(Node):
 
             self.motionForward(pos_error_mm)
             self.current_motion['emergency'] = False
+            self.current_motion['in_motion'] = True
             self.clear_confirmation = 0
         elif not msg.data and self.current_motion['emergency'] and self.clear_confirmation < 5 :
             self.clear_confirmation += 1
             self.get_logger().info(f"Waiting for confirmation {self.clear_confirmation}")
         elif msg.data and self.current_motion['emergency']:
             self.get_logger().info("Waiting for the obstacle to move")
+            time.sleep(0.5)
 
     #
     # Distance to do in mm
@@ -421,7 +432,7 @@ class MotionService(Node):
         self.get_logger().info(f"Motion Has start => increment_pos_0:={increment_pos_0}, increment_pos_1:={increment_pos_1}")
         
         if increment_pos_0 == increment_pos_1:
-            if increment_pos_0 > self.pos_estimate_0:
+            if increment_pos_0 > 0:
                 type = "forward"
             else:
                 type = "backward"
@@ -441,7 +452,6 @@ class MotionService(Node):
         self.current_motion['start'] = time.time()
         self.current_motion['target_position_0'] = target_position_0
         self.current_motion['target_position_1'] = target_position_1
-        self.current_motion['evitement'] = self.current_motion['evitement']
 
     def is_motion_complete(self):
         motion_completed = False
