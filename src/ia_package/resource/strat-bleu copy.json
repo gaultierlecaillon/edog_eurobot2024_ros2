@@ -1,9 +1,9 @@
 {
   "type": "Strategy",
-  "name": "start_yellow.json",
-  "description": "start Yellow, opening solr",
-  "color": "yellow",
-  "startingPos": "325,1780,180",
+  "name": "strat_bleu.json",
+  "description": "Strat Bleu",
+  "color": "blue",
+  "startingPos": "2885,1775,180",
   "timer": "100",
   "strategy": [
     {
@@ -11,7 +11,6 @@
       "actions": [
         { "calibrate": "True" },
         { "waiting_tirette": true },
-        { "forward": "150" },
         { "waiting_tirette": false }
       ]
     },
@@ -19,15 +18,17 @@
       "name": "Solar panels",
       "actions": [
         { "arm": "open" },
-        { "forward": "-700" },
+        { "pince": "right,extend" },
+        { "forward": "700" },
         { "arm": "close" },
-        { "forward": "200" }
+        { "forward": "-200" },
+        { "pince": "right,close" }
       ]
     },
     {
       "name": "grab 1st plants",
       "actions": [
-        { "goto": "600,1300,0" },
+        { "goto": "2400,1300,180" },
         { "grab": "" },
         { "forward": "-200" }
       ]
@@ -35,7 +36,7 @@
     {
       "name": "grab 2nd plants",
       "actions": [
-        { "goto": "600,700,0" },
+        { "goto": "2400,700,180" },
         { "grab": "" },
         { "forward": "-200" }
       ]
@@ -43,8 +44,8 @@
     {
       "name": "Depose",
       "actions": [
-        { "goto": "500,300,180" },
-        { "goto": "350,300,180" },
+        { "goto": "2600,300,0" },
+        { "goto": "2680,300,0" },
         { "pince": "right,extend" },
         { "pince": "left,extend" },
         { "sleep": "1" },

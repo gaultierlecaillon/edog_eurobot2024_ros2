@@ -32,7 +32,7 @@
   },
   "elevator": {      
       "down": 0,
-      "depose": 30,
+      "depose": 50,
       "plant": 130,
       "jardiniere": 450,
       "up": 450
